@@ -14,7 +14,14 @@ import i18n from "@/localization/i18n";
 import {useUserMode} from "@/hooks/userModeContext";
 import {requestMicrophonePermission, startAudioStream, stopAudioStream} from "@/services/audioStreamRecorder";
 import {ReadingSpeedSocket} from "@/services/readingSpeedSocket";
-import {ReadingSpeedMetrics, ReferenceWord, WordStatus} from "@/types/ReadingSpeed";
+import readingSpeedAttemptApi from "@/api/endpoints/readingSpeedAttemptApi";
+import {ReadingSpeedMetrics, ReferenceWord, StressStatus, WordStatus} from "@/types/ReadingSpeed";
+
+// Скільки чекати між опитуваннями стану шару перевірки наголосу — forced
+// alignment триває секунди, не мілісекунди (docs/reading-speed-implementation-
+// overview.md), тому частіше опитувати немає сенсу.
+const STRESS_POLL_INTERVAL_MS = 3000;
+const STRESS_TERMINAL_STATUSES: StressStatus[] = ["DONE", "FAILED", "NOT_APPLICABLE"];
 
 // MVP: один захардкоджений текст на бекенді (розділ 7 дизайн-дока), пізніше
 // стане параметром екрана з вибором уривку книги.
@@ -34,12 +41,50 @@ const ReadingSpeed = () => {
     const [metrics, setMetrics] = useState<ReadingSpeedMetrics | null>(null);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+    // Окремий (асинхронний, рахується в фоні на бекенді) шар перевірки
+    // наголосу — attemptId приходить у "result", далі мобілка лише опитує
+    // Java за станом. Якщо користувач покине цей екран, поллінг зупиниться
+    // (див. cleanup), але сама обробка на бекенді триватиме незалежно.
+    const [attemptId, setAttemptId] = useState<number | null>(null);
+    const [stressStatus, setStressStatus] = useState<StressStatus | null>(null);
+    const [stressProgress, setStressProgress] = useState<number | null>(null);
+    const [stressAccuracy, setStressAccuracy] = useState<number | null>(null);
+
     const socketRef = useRef<ReadingSpeedSocket | null>(null);
+    const stressPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+    const stopStressPolling = () => {
+        if (stressPollRef.current) {
+            clearInterval(stressPollRef.current);
+            stressPollRef.current = null;
+        }
+    };
+
+    const startStressPolling = (id: number) => {
+        stopStressPolling();
+
+        const poll = async () => {
+            const response = await readingSpeedAttemptApi.getById(id);
+            if (!response.success) {
+                return;
+            }
+            setStressStatus(response.data.stressStatus);
+            setStressProgress(response.data.stressProgress);
+            setStressAccuracy(response.data.stressAccuracy);
+            if (STRESS_TERMINAL_STATUSES.includes(response.data.stressStatus)) {
+                stopStressPolling();
+            }
+        };
+
+        poll();
+        stressPollRef.current = setInterval(poll, STRESS_POLL_INTERVAL_MS);
+    };
 
     const cleanup = () => {
         stopAudioStream();
         socketRef.current?.close();
         socketRef.current = null;
+        stopStressPolling();
     };
 
     useEffect(() => {
@@ -69,6 +114,11 @@ const ReadingSpeed = () => {
         setStatuses({});
         setTentativeStatuses({});
         setMetrics(null);
+        setAttemptId(null);
+        setStressStatus(null);
+        setStressProgress(null);
+        setStressAccuracy(null);
+        stopStressPolling();
         setPhase("connecting");
 
         const granted = await requestMicrophonePermission();
@@ -94,6 +144,11 @@ const ReadingSpeed = () => {
                     setMetrics(result.metrics);
                     setPhase("finished");
                     stopAudioStream();
+                    if (result.attempt_id !== null) {
+                        setAttemptId(result.attempt_id);
+                        setStressStatus("PENDING");
+                        startStressPolling(result.attempt_id);
+                    }
                 },
                 onError: (error) => {
                     console.error("[ReadingSpeed] socket error", error);
@@ -125,6 +180,7 @@ const ReadingSpeed = () => {
     const handleRestart = () => {
         socketRef.current?.close();
         socketRef.current = null;
+        stopStressPolling();
         setPhase("idle");
     };
 
@@ -254,6 +310,55 @@ const ReadingSpeed = () => {
                                         {metrics.skipped_count}
                                     </CustomText>
                                 </XStack>
+
+                                {stressStatus && stressStatus !== "NOT_APPLICABLE" && (
+                                    <YStack gap={6} paddingTop={4} borderTopWidth={1} borderColor="$gray-85">
+                                        <XStack justifyContent="space-between" alignItems="center" paddingTop={8}>
+                                            <CustomText size="p1Regular" color="$gray-40">
+                                                {i18n.t("reading_speed_stress_accuracy")}
+                                            </CustomText>
+
+                                            {stressStatus === "DONE" && (
+                                                <CustomText size="h4Medium" color="$gray-20">
+                                                    {stressAccuracy !== null ? `${Math.round(stressAccuracy * 100)}%` : "—"}
+                                                </CustomText>
+                                            )}
+
+                                            {stressStatus === "FAILED" && (
+                                                <CustomText size="p2Regular" color="$gray-40">
+                                                    {i18n.t("reading_speed_stress_failed")}
+                                                </CustomText>
+                                            )}
+
+                                            {(stressStatus === "PENDING" || stressStatus === "PROCESSING") && (
+                                                <XStack alignItems="center" gap={8}>
+                                                    <ActivityIndicator size="small" color="#CB5A2E"/>
+                                                    <CustomText size="p2Regular" color="$gray-40">
+                                                        {stressProgress !== null
+                                                            ? `${stressProgress}%`
+                                                            : i18n.t("reading_speed_stress_processing")}
+                                                    </CustomText>
+                                                </XStack>
+                                            )}
+                                        </XStack>
+
+                                        {(stressStatus === "PENDING" || stressStatus === "PROCESSING") && (
+                                            <>
+                                                <YStack height={6} borderRadius={3} backgroundColor="$gray-85" overflow="hidden">
+                                                    <YStack
+                                                        height="100%"
+                                                        width={`${stressProgress ?? 6}%`}
+                                                        backgroundColor="#CB5A2E"
+                                                        borderRadius={3}
+                                                    />
+                                                </YStack>
+                                                <CustomText size="p3Regular" color="$gray-40">
+                                                    {i18n.t("reading_speed_stress_hint")}
+                                                </CustomText>
+                                            </>
+                                        )}
+                                    </YStack>
+                                )}
                             </YStack>
                             <PrimaryButton
                                 text={i18n.t("reading_speed_try_again")}

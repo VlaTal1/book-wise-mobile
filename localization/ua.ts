@@ -18,6 +18,10 @@ const en = {
     "reading_speed_skipped": "Пропущено",
     "microphone_permission_denied": "Для замірювання швидкості читання потрібен доступ до мікрофона",
     "reading_speed_connection_failed": "Не вдалося підключитися. Спробуйте ще раз.",
+    "reading_speed_stress_accuracy": "Точність наголосу",
+    "reading_speed_stress_processing": "Аналізуємо…",
+    "reading_speed_stress_failed": "Не вдалося порахувати",
+    "reading_speed_stress_hint": "Результат з'явиться трохи пізніше — можна вийти з екрана, обробка триватиме у фоні.",
 };
 
 export default en;
