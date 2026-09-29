@@ -1,4 +1,5 @@
 import React, {useEffect, useState} from "react";
+import {GestureResponderEvent, LayoutChangeEvent} from "react-native";
 import {XStack, YStack} from "tamagui";
 import Feather from "@expo/vector-icons/Feather";
 import {AudioSource, useAudioPlayer, useAudioPlayerStatus} from "expo-audio";
@@ -26,6 +27,13 @@ export const AudioPlayerBar = ({attemptId}: Props) => {
 
     const player = useAudioPlayer(source);
     const status = useAudioPlayerStatus(player);
+
+    // Ширина смуги прогресу (для перетворення X дотику у частку 0..1) і
+    // "прев'ю" перемотки під час перетягування — доки палець на екрані,
+    // показуємо позицію дотику, а не status.currentTime (він оновлюється з
+    // затримкою і "смикав" би повзунок під час свайпу).
+    const [trackWidth, setTrackWidth] = useState(0);
+    const [seekPreview, setSeekPreview] = useState<number | null>(null);
 
     useEffect(() => {
         let cancelled = false;
@@ -61,7 +69,34 @@ export const AudioPlayerBar = ({attemptId}: Props) => {
         }
     };
 
-    const progress = status.duration > 0 ? Math.min(1, status.currentTime / status.duration) : 0;
+    const onTrackLayout = (e: LayoutChangeEvent) => {
+        setTrackWidth(e.nativeEvent.layout.width);
+    };
+
+    const previewFractionFromTouch = (e: GestureResponderEvent): number | null => {
+        if (trackWidth <= 0 || !status.isLoaded || status.duration <= 0) {
+            return null;
+        }
+        const x = e.nativeEvent.locationX;
+        return Math.min(1, Math.max(0, x / trackWidth));
+    };
+
+    const onSeekMove = (e: GestureResponderEvent) => {
+        const fraction = previewFractionFromTouch(e);
+        if (fraction !== null) {
+            setSeekPreview(fraction);
+        }
+    };
+
+    const onSeekRelease = () => {
+        if (seekPreview !== null && status.duration > 0) {
+            player.seekTo(seekPreview * status.duration);
+        }
+        setSeekPreview(null);
+    };
+
+    const progress = seekPreview ?? (status.duration > 0 ? Math.min(1, status.currentTime / status.duration) : 0);
+    const displaySeconds = seekPreview !== null ? seekPreview * status.duration : status.currentTime;
 
     return (
         <XStack
@@ -87,12 +122,24 @@ export const AudioPlayerBar = ({attemptId}: Props) => {
             >
                 <Feather name={status.playing ? "pause" : "play"} size={20} color="#FFFFFF"/>
             </XStack>
-            <YStack flex={1} gap={6}>
-                <XStack height={4} borderRadius={2} backgroundColor="$gray-85" overflow="hidden">
-                    <XStack height="100%" width={`${progress * 100}%`} backgroundColor="#CB5A2E"/>
-                </XStack>
+            <YStack flex={1} gap={2}>
+                <YStack
+                    justifyContent="center"
+                    paddingVertical={10}
+                    onLayout={onTrackLayout}
+                    onStartShouldSetResponder={() => status.isLoaded}
+                    onMoveShouldSetResponder={() => status.isLoaded}
+                    onResponderGrant={onSeekMove}
+                    onResponderMove={onSeekMove}
+                    onResponderRelease={onSeekRelease}
+                    onResponderTerminate={onSeekRelease}
+                >
+                    <XStack height={4} borderRadius={2} backgroundColor="$gray-85" overflow="hidden">
+                        <XStack height="100%" width={`${progress * 100}%`} backgroundColor="#CB5A2E"/>
+                    </XStack>
+                </YStack>
                 <CustomText size="p3Regular" color="$gray-40">
-                    {formatTime(status.currentTime)} / {formatTime(status.duration)}
+                    {formatTime(displaySeconds)} / {formatTime(status.duration)}
                 </CustomText>
             </YStack>
         </XStack>
