@@ -24,14 +24,21 @@ export interface ReadingSpeedSocketHandlers {
 export class ReadingSpeedSocket {
     private ws: WebSocket | null = null;
 
-    async connect(participantId: string, textId: string, handlers: ReadingSpeedSocketHandlers): Promise<ReferenceTextMessage> {
+    // textId: якщо не передано — бекенд сам обирає випадковий уривок
+    // (~300-340 слів) з книги, призначеної дитині (services/book_excerpt.py
+    // на боці Python). Явний textId лишається лише для розробки/діагностики
+    // (фіксований eталонний текст).
+    async connect(participantId: string, textId: string | undefined, handlers: ReadingSpeedSocketHandlers): Promise<ReferenceTextMessage> {
         const token = await getAccessToken();
         if (!token) {
             throw new Error("No access token available");
         }
 
         const baseUrl = getWsBaseUrl();
-        const params = new URLSearchParams({token, participant_id: participantId, text_id: textId});
+        const params = new URLSearchParams({token, participant_id: participantId});
+        if (textId) {
+            params.set("text_id", textId);
+        }
         const url = `${baseUrl}/ws/reading-speed?${params.toString()}`;
 
         return new Promise((resolve, reject) => {

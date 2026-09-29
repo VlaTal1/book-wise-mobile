@@ -9,6 +9,10 @@ const STATUS_COLORS: Record<WordStatus, string> = {
     error: "$error-primary",
     skipped: "$gray-60",
     not_in_vocabulary: "#2F6F62",
+    // На практиці ці події приходять лише в останню мить сесії (finalize),
+    // коли екран уже перемикається на "finished" — колір лише для повноти
+    // Record<WordStatus, ...>, не очікується видимим у звичайному потоці.
+    not_reached: "$gray-85",
 };
 
 const PENDING_COLOR = "$gray-20";

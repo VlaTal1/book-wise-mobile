@@ -23,9 +23,10 @@ import {ReadingSpeedMetrics, ReferenceWord, StressStatus, WordStatus} from "@/ty
 const STRESS_POLL_INTERVAL_MS = 3000;
 const STRESS_TERMINAL_STATUSES: StressStatus[] = ["DONE", "FAILED", "NOT_APPLICABLE"];
 
-// MVP: один захардкоджений текст на бекенді (розділ 7 дизайн-дока), пізніше
-// стане параметром екрана з вибором уривку книги.
-const DEFAULT_TEXT_ID = "text_1";
+// Уривок (~300-340 слів, services/book_excerpt.py на боці Python) явно
+// довший за час, який дитина встигає прочитати вголос за хвилину — це
+// навмисно: скільки встигла прочитати, стільки й враховується в метриці.
+const READING_TIME_LIMIT_SECONDS = 60;
 
 type Phase = "idle" | "connecting" | "reading" | "finished";
 
@@ -50,14 +51,43 @@ const ReadingSpeed = () => {
     const [stressProgress, setStressProgress] = useState<number | null>(null);
     const [stressAccuracy, setStressAccuracy] = useState<number | null>(null);
 
+    const [secondsLeft, setSecondsLeft] = useState(READING_TIME_LIMIT_SECONDS);
+
     const socketRef = useRef<ReadingSpeedSocket | null>(null);
     const stressPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const readingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     const stopStressPolling = () => {
         if (stressPollRef.current) {
             clearInterval(stressPollRef.current);
             stressPollRef.current = null;
         }
+    };
+
+    const stopReadingTimer = () => {
+        if (readingTimerRef.current) {
+            clearInterval(readingTimerRef.current);
+            readingTimerRef.current = null;
+        }
+    };
+
+    // Хвилина на читання — скільки встигла дитина, стільки й враховується
+    // (постановка задачі). По закінченню часу завершуємо сесію так само, як
+    // і по кнопці "Стоп" (handleStop): сервер сам фіналізує розпізнане на
+    // цей момент і надішле "result".
+    const startReadingTimer = () => {
+        stopReadingTimer();
+        setSecondsLeft(READING_TIME_LIMIT_SECONDS);
+        readingTimerRef.current = setInterval(() => {
+            setSecondsLeft((prev) => {
+                if (prev <= 1) {
+                    stopReadingTimer();
+                    handleStop();
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
     };
 
     const startStressPolling = (id: number) => {
@@ -85,6 +115,7 @@ const ReadingSpeed = () => {
         socketRef.current?.close();
         socketRef.current = null;
         stopStressPolling();
+        stopReadingTimer();
     };
 
     useEffect(() => {
@@ -119,6 +150,7 @@ const ReadingSpeed = () => {
         setStressProgress(null);
         setStressAccuracy(null);
         stopStressPolling();
+        stopReadingTimer();
         setPhase("connecting");
 
         const granted = await requestMicrophonePermission();
@@ -132,7 +164,7 @@ const ReadingSpeed = () => {
         socketRef.current = socket;
 
         try {
-            const reference = await socket.connect(childId, DEFAULT_TEXT_ID, {
+            const reference = await socket.connect(childId, undefined, {
                 onWordEvent: (event) => {
                     if (event.tentative) {
                         setTentativeStatuses((prev) => ({...prev, [event.index]: event.status}));
@@ -141,6 +173,7 @@ const ReadingSpeed = () => {
                     }
                 },
                 onResult: (result) => {
+                    stopReadingTimer();
                     setMetrics(result.metrics);
                     setPhase("finished");
                     stopAudioStream();
@@ -161,6 +194,7 @@ const ReadingSpeed = () => {
             setReferenceWords(reference.words);
             setReferenceTitle(reference.title);
             setPhase("reading");
+            startReadingTimer();
 
             startAudioStream((chunk) => {
                 socketRef.current?.sendAudioChunk(chunk);
@@ -181,8 +215,11 @@ const ReadingSpeed = () => {
         socketRef.current?.close();
         socketRef.current = null;
         stopStressPolling();
+        stopReadingTimer();
         setPhase("idle");
     };
+
+    const formattedTimeLeft = `${Math.floor(secondsLeft / 60)}:${String(secondsLeft % 60).padStart(2, "0")}`;
 
     return (
         <>
@@ -237,9 +274,17 @@ const ReadingSpeed = () => {
 
                     {phase === "reading" && (
                         <>
-                            <CustomText size="h5Medium" color="$gray-40">
-                                {referenceTitle}
-                            </CustomText>
+                            <XStack justifyContent="space-between" alignItems="center">
+                                <CustomText size="h5Medium" color="$gray-40">
+                                    {referenceTitle}
+                                </CustomText>
+                                <CustomText
+                                    size="h4Medium"
+                                    color={secondsLeft <= 10 ? "$error-primary" : "$gray-20"}
+                                >
+                                    {formattedTimeLeft}
+                                </CustomText>
+                            </XStack>
                             <ScrollView style={{flex: 1}}>
                                 <HighlightedWordText
                                     words={referenceWords}

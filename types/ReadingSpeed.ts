@@ -1,4 +1,8 @@
-export type WordStatus = "correct" | "error" | "skipped" | "not_in_vocabulary";
+// not_reached: еталонний текст навмисно довший (300-340 слів, запас на темп
+// читання), ніж дитина встигає прочитати за виділену хвилину — "хвіст", до
+// якого сесія не дійшла, не помилка читання і виключений з метрики точності
+// (ReadingSpeedMetrics.total_words на бекенді враховує лише прочитане).
+export type WordStatus = "correct" | "error" | "skipped" | "not_in_vocabulary" | "not_reached";
 
 export interface ReferenceWord {
     index: number;
