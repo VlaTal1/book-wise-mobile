@@ -2,18 +2,8 @@ import React from "react";
 import {XStack} from "tamagui";
 
 import {CustomText} from "@/components/CustomText";
+import {WORD_STATUS_COLORS} from "@/constants/wordStatusColors";
 import {ReferenceWord, WordStatus} from "@/types/ReadingSpeed";
-
-const STATUS_COLORS: Record<WordStatus, string> = {
-    correct: "#3F8A5D",
-    error: "$error-primary",
-    skipped: "$gray-60",
-    not_in_vocabulary: "#2F6F62",
-    // На практиці ці події приходять лише в останню мить сесії (finalize),
-    // коли екран уже перемикається на "finished" — колір лише для повноти
-    // Record<WordStatus, ...>, не очікується видимим у звичайному потоці.
-    not_reached: "$gray-85",
-};
 
 const PENDING_COLOR = "$gray-20";
 const TENTATIVE_COLOR = "$gray-60";
@@ -37,7 +27,7 @@ export const HighlightedWordText = ({words, statuses, tentativeStatuses = {}}: P
 
                 let color = PENDING_COLOR;
                 if (confirmedStatus) {
-                    color = STATUS_COLORS[confirmedStatus];
+                    color = WORD_STATUS_COLORS[confirmedStatus];
                 } else if (isTentative) {
                     color = TENTATIVE_COLOR;
                 }
@@ -48,7 +38,7 @@ export const HighlightedWordText = ({words, statuses, tentativeStatuses = {}}: P
                         size="h5Regular"
                         color={color}
                     >
-                        {word.word}
+                        {word.display}
                     </CustomText>
                 );
             })}

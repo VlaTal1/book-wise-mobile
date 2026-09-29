@@ -8,6 +8,10 @@ export interface ReferenceWord {
     index: number;
     word: string;
     in_vocabulary: boolean;
+    // Оригінальний фрагмент тексту (регістр + пунктуація одразу за словом,
+    // напр. "музики." чи "такої,") — саме це рендериться на екрані читання;
+    // word (нормалізоване, без пунктуації) — лише для внутрішньої логіки.
+    display: string;
 }
 
 export interface ReferenceTextMessage {
@@ -55,18 +59,25 @@ export type ReadingSpeedServerMessage = ReferenceTextMessage | WordEventMessage 
 // результатів або застосунок; мобілка лише опитує стан.
 export type StressStatus = "PENDING" | "PROCESSING" | "DONE" | "FAILED" | "NOT_APPLICABLE";
 
+// Поля саме в snake_case — це сирий JSON з Python-моделі (models/stress.py,
+// StressWordVerdict), Java зберігає і повертає stressWordsJson як є, не
+// перейменовуючи ключі під камелкейс (на відміну від решти полів DTO).
 export interface StressWordVerdict {
     index: number;
     word: string;
     checked: boolean;
     correct: boolean | null;
-    predictedSyllable: number | null;
-    referenceSyllables: number[] | null;
+    predicted_syllable: number | null;
+    reference_syllables: number[] | null;
 }
 
 export interface ReadingSpeedAttempt {
     id: number;
     participantId: number;
+    // Заповнено лише в елементах списку "усі мої діти" (батьківський режим
+    // історії, readingSpeedAttemptApi.getAllHistory) — щоб показати, чия це
+    // спроба, коли список змішує кількох дітей.
+    participantName: string | null;
     textId: string;
     totalWords: number;
     correctCount: number;
@@ -76,7 +87,11 @@ export interface ReadingSpeedAttempt {
     durationSeconds: number;
     wpm: number;
     accuracy: number;
+    // JSON-масив WordEventRecord (index+status) — розпізнаний результат.
     wordsJson: string;
+    // JSON-масив ReferenceWord — сам еталонний текст (з display для показу),
+    // без нього wordsJson не можна перетворити на кольоровий текст.
+    referenceWordsJson: string | null;
     stressStatus: StressStatus;
     // 0-100, best-effort (кілька грубих етапів пайплайну forced alignment,
     // не гранулярний прогрес) — може бути відсутнім навіть у PROCESSING.
@@ -86,4 +101,16 @@ export interface ReadingSpeedAttempt {
     stressCorrectWords: number | null;
     stressWordsJson: string | null;
     stressError: string | null;
+    // MinIO object key — присутній, лише якщо завантаження аудіо в MinIO
+    // вдалося (services/reading_speed_session.py, Python); якщо null, плеєр
+    // в історії не показуємо.
+    audioFileName: string | null;
+    createdAt: string;
+    updatedAt: string;
+}
+
+// Один елемент розпарсеного wordsJson.
+export interface WordEventRecord {
+    index: number;
+    status: WordStatus;
 }

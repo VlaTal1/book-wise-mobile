@@ -100,6 +100,11 @@ const Home = () => {
                         type="statistics"
                         onPress={() => router.navigate("/statistics")}
                     />
+                    <HomeMenuCard
+                        title={i18n.t("reading_history_title")}
+                        type="readingHistory"
+                        onPress={() => router.navigate("/readingHistory")}
+                    />
                 </XStack>
             </View>
 

@@ -22,6 +22,23 @@ const en = {
     "reading_speed_stress_processing": "Аналізуємо…",
     "reading_speed_stress_failed": "Не вдалося порахувати",
     "reading_speed_stress_hint": "Результат з'явиться трохи пізніше — можна вийти з екрана, обробка триватиме у фоні.",
+    "reading_history_title": "Історія читання",
+    "reading_history_empty": "Поки що немає жодної сесії читання",
+    "reading_history_fetch_failed": "Не вдалося завантажити історію читання",
+    "reading_history_wpm_short": "сл/хв",
+    "reading_history_audio_unavailable": "Аудіо для цієї сесії недоступне",
+    "reading_history_delete": "Видалити",
+    "reading_history_delete_confirm_title": "Видалити цю сесію?",
+    "reading_history_delete_confirm_message": "Запис і результати буде видалено назавжди. Це не можна скасувати.",
+    "reading_history_delete_failed": "Не вдалося видалити сесію",
+    "cancel": "Скасувати",
+    "word_status_legend_title": "Що означають кольори",
+    "word_status_correct": "Прочитано правильно",
+    "word_status_error": "Прочитано неправильно",
+    "word_status_skipped": "Пропущено під час читання",
+    "word_status_not_in_vocabulary": "Слово поза словником розпізнавання",
+    "word_status_not_reached": "Не встигли дочитати",
+    "word_status_stress_error": "Неправильний наголос (підкреслення)",
 };
 
 export default en;
