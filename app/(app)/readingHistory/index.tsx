@@ -1,9 +1,8 @@
 import React, {useCallback, useEffect} from "react";
 import {useRouter} from "expo-router";
 import {useBackHandler} from "@react-native-community/hooks";
+import {ActivityIndicator, FlatList, RefreshControl} from "react-native";
 import {ScrollView, XStack, YStack} from "tamagui";
-import {Alert, FlatList, RefreshControl} from "react-native";
-import Feather from "@expo/vector-icons/Feather";
 
 import CustomStackScreen from "@/components/CustomStackScreen";
 import Header from "@/components/Header";
@@ -11,82 +10,14 @@ import HeaderButton from "@/components/buttons/HeaderButton";
 import {CustomText} from "@/components/CustomText";
 import i18n from "@/localization/i18n";
 import useApi from "@/hooks/useApi";
-import readingSpeedAttemptApi from "@/api/endpoints/readingSpeedAttemptApi";
+import participantApi from "@/api/endpoints/participantApi";
+import ParticipantButton from "@/components/buttons/ParticipantButton";
 import {useUserMode} from "@/hooks/userModeContext";
-import {ReadingSpeedAttempt} from "@/types/ReadingSpeed";
 
-const formatDate = (iso: string): string => {
-    const date = new Date(iso);
-    return date.toLocaleDateString(undefined, {day: "2-digit", month: "2-digit", year: "numeric"}) +
-        " " + date.toLocaleTimeString(undefined, {hour: "2-digit", minute: "2-digit"});
-};
-
-const ReadingHistoryRow = ({attempt, showParticipantName, onPress, onDelete}: {
-    attempt: ReadingSpeedAttempt;
-    showParticipantName: boolean;
-    onPress: () => void;
-    onDelete: () => void;
-}) => {
-    const stressLabel = attempt.stressStatus === "DONE" && attempt.stressAccuracy !== null
-        ? `${Math.round(attempt.stressAccuracy * 100)}%`
-        : attempt.stressStatus === "PROCESSING" || attempt.stressStatus === "PENDING"
-            ? i18n.t("reading_speed_stress_processing")
-            : null;
-
-    const confirmDelete = () => {
-        Alert.alert(
-            i18n.t("reading_history_delete_confirm_title"),
-            i18n.t("reading_history_delete_confirm_message"),
-            [
-                {text: i18n.t("cancel"), style: "cancel"},
-                {text: i18n.t("reading_history_delete"), style: "destructive", onPress: onDelete},
-            ],
-        );
-    };
-
-    return (
-        <YStack
-            backgroundColor="#FFFFFF"
-            borderRadius={20}
-            padding={16}
-            borderWidth={1}
-            borderColor="$gray-85"
-            gap={6}
-            onPress={onPress}
-            pressStyle={{opacity: 0.9, scale: 0.99}}
-        >
-            <XStack justifyContent="space-between" alignItems="center">
-                <CustomText size="p2Medium" color="$gray-20">
-                    {showParticipantName ? attempt.participantName ?? "—" : formatDate(attempt.createdAt)}
-                </CustomText>
-                <XStack alignItems="center" gap={12}>
-                    {showParticipantName && (
-                        <CustomText size="p3Regular" color="$gray-40">
-                            {formatDate(attempt.createdAt)}
-                        </CustomText>
-                    )}
-                    <XStack padding={4} onPress={confirmDelete} hitSlop={8}>
-                        <Feather name="trash-2" size={16} color="#A68A63"/>
-                    </XStack>
-                </XStack>
-            </XStack>
-            <XStack gap={16}>
-                <CustomText size="p2Regular" color="$gray-40">
-                    {attempt.wpm} {i18n.t("reading_history_wpm_short")}
-                </CustomText>
-                <CustomText size="p2Regular" color="$gray-40">
-                    {Math.round(attempt.accuracy * 100)}%
-                </CustomText>
-                {stressLabel && (
-                    <CustomText size="p2Regular" color="$gray-40">
-                        {i18n.t("reading_speed_stress_accuracy")}: {stressLabel}
-                    </CustomText>
-                )}
-            </XStack>
-        </YStack>
-    );
-};
-
+// Дитячий режим: власна історія — без вибору, одразу редірект на
+// readingHistory/participant/[participantId] (одне й те саме дитя).
+// Батьківський режим: спочатку список дітей, по натисканню — історія
+// саме цієї дитини (той самий екран participant/[participantId]).
 const ReadingHistory = () => {
     const router = useRouter();
     const {childId, isChildMode, isParentMode} = useUserMode();
@@ -100,58 +31,47 @@ const ReadingHistory = () => {
         return true;
     });
 
-    const fetchOwnHistoryApi = useApi(
-        readingSpeedAttemptApi.getHistory,
-        {
-            errorHandler: {
-                title: i18n.t("error"),
-                message: `${i18n.t("reading_history_fetch_failed")}\n${i18n.t("please_try_again_later")}`,
-                options: {tryAgain: true, cancel: true},
-            },
-        },
-    );
-
-    const fetchAllHistoryApi = useApi(
-        readingSpeedAttemptApi.getAllHistory,
-        {
-            errorHandler: {
-                title: i18n.t("error"),
-                message: `${i18n.t("reading_history_fetch_failed")}\n${i18n.t("please_try_again_later")}`,
-                options: {tryAgain: true, cancel: true},
-            },
-        },
-    );
-
-    const invokeFetch = useCallback(() => {
-        if (isChildMode && childId) {
-            fetchOwnHistoryApi.execute(childId);
-        } else if (isParentMode) {
-            fetchAllHistoryApi.execute();
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [childId, isChildMode, isParentMode]);
-
     useEffect(() => {
-        invokeFetch();
+        if (isChildMode && childId) {
+            router.replace(`/readingHistory/participant/${childId}`);
+        }
+    }, [childId, isChildMode, router]);
+
+    const fetchAllParticipantApi = useApi(
+        participantApi.fetchAllParticipants,
+        {
+            errorHandler: {
+                title: i18n.t("error"),
+                message: `${i18n.t("failed_to_fetch_children")}\n${i18n.t("please_try_again_later")}`,
+                options: {tryAgain: true, cancel: true},
+            },
+        },
+    );
+
+    const invokeFetchParticipants = useCallback(() => {
+        fetchAllParticipantApi.execute();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    const deleteAttemptApi = useApi(
-        readingSpeedAttemptApi.deleteAttempt,
-        {
-            onSuccess: () => {
-                invokeFetch();
-            },
-            errorHandler: {
-                title: i18n.t("error"),
-                message: `${i18n.t("reading_history_delete_failed")}\n${i18n.t("please_try_again_later")}`,
-                options: {cancel: true},
-            },
-        },
-    );
+    useEffect(() => {
+        if (isParentMode) {
+            invokeFetchParticipants();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isParentMode]);
 
-    const attempts = (isChildMode ? fetchOwnHistoryApi.data : fetchAllHistoryApi.data) ?? [];
-    const loading = isChildMode ? fetchOwnHistoryApi.loading : fetchAllHistoryApi.loading;
+    if (isChildMode) {
+        return (
+            <>
+                <CustomStackScreen/>
+                <YStack flex={1} justifyContent="center" alignItems="center">
+                    <ActivityIndicator size="large" color="#CB5A2E"/>
+                </YStack>
+            </>
+        );
+    }
+
+    const participants = fetchAllParticipantApi.data ?? [];
 
     return (
         <>
@@ -168,32 +88,39 @@ const ReadingHistory = () => {
                     </XStack>
                 </Header>
                 <ScrollView
-                    contentContainerStyle={{flex: attempts.length === 0 ? 1 : "unset", paddingHorizontal: 16}}
-                    refreshControl={<RefreshControl refreshing={loading} onRefresh={invokeFetch}/>}
+                    contentContainerStyle={{flex: participants.length === 0 ? 1 : "unset", paddingHorizontal: 16}}
+                    refreshControl={
+                        <RefreshControl refreshing={fetchAllParticipantApi.loading} onRefresh={invokeFetchParticipants}/>
+                    }
                 >
                     <CustomText size="h2">
                         {i18n.t("reading_history_title")}
                     </CustomText>
-                    {attempts.length === 0 && !loading && (
+                    <CustomText size="p1Regular" color="$gray-40" paddingTop={4}>
+                        {i18n.t("reading_history_select_child")}
+                    </CustomText>
+                    {participants.length === 0 && !fetchAllParticipantApi.loading && (
                         <YStack flex={1} justifyContent="center" alignItems="center">
                             <CustomText size="p1Regular" color="$gray-40">
-                                {i18n.t("reading_history_empty")}
+                                {i18n.t("reading_history_no_children")}
                             </CustomText>
                         </YStack>
                     )}
-                    <YStack paddingBottom={80}>
+                    <YStack flex={1} height="100%" paddingTop={16} paddingBottom={80}>
                         <FlatList
                             numColumns={1}
-                            contentContainerStyle={{marginVertical: 11, gap: 8}}
+                            contentContainerStyle={{gap: 8}}
                             scrollEnabled={false}
-                            data={attempts}
+                            data={participants}
                             keyExtractor={(item) => item.id.toString()}
                             renderItem={({item}) => (
-                                <ReadingHistoryRow
-                                    attempt={item}
-                                    showParticipantName={isParentMode}
-                                    onPress={() => router.navigate(`/readingHistory/${item.id}`)}
-                                    onDelete={() => deleteAttemptApi.execute(item.id)}
+                                <ParticipantButton
+                                    key={item.id}
+                                    participant={item}
+                                    onPress={() => router.navigate({
+                                        pathname: "/readingHistory/participant/[participantId]",
+                                        params: {participantId: item.id.toString(), participantName: item.name},
+                                    })}
                                 />
                             )}
                         />

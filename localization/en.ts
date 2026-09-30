@@ -94,6 +94,8 @@ const en = {
     "reading_history_delete_confirm_title": "Delete this session?",
     "reading_history_delete_confirm_message": "This will permanently remove the recording and results. This can't be undone.",
     "reading_history_delete_failed": "Failed to delete the session",
+    "reading_history_select_child": "Choose a child to see their reading history",
+    "reading_history_no_children": "No children added yet",
     "word_status_legend_title": "What the colors mean",
     "word_status_correct": "Read correctly",
     "word_status_error": "Read incorrectly",
