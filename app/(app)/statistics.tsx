@@ -1,53 +1,30 @@
 import {useBackHandler} from "@react-native-community/hooks";
 import {useRouter} from "expo-router";
-import React, {useCallback, useEffect, useMemo, useState} from "react"
+import React, {useCallback, useMemo, useState} from "react"
 import {ScrollView, XStack, YStack} from "tamagui";
-import {ActivityIndicator} from "react-native";
 
 import HeaderButton from "@/components/buttons/HeaderButton";
 import CustomStackScreen from "@/components/CustomStackScreen";
 import {CustomText} from "@/components/CustomText";
 import Header from "@/components/Header";
-import useApi from "@/hooks/useApi";
 import i18n from "@/localization/i18n";
-import statisticsApi from "@/api/endpoints/statisticsApi";
-import {GradeByParticipant} from "@/types/statistics/GradeByParticipant";
 import SegmentedControl from "@/components/SegmentedControl";
-import StatisticsChart from "@/components/statistics/charts";
-import {StatisticsType} from "@/types/statistics";
-import {ParticipantDailyStats} from "@/types/statistics/DailyStatistics";
-import {WeeklyStatsByParticipant} from "@/types/statistics/YearStatistics";
+import SimpleReadingStatistics from "@/components/statistics/SimpleReadingStatistics";
+import ReadingSpeedStatistics from "@/components/statistics/ReadingSpeedStatistics";
 
-
+// Два незалежних розділи статистики — "просте" читання (оцінки за тести,
+// сторінки/час, ReadingSession) і читання на швидкість (WPM/точність/
+// наголос, ReadingSpeedAttempt) — кожен зі своїми внутрішніми вкладками,
+// див. components/statistics/{SimpleReadingStatistics,ReadingSpeedStatistics}.
 const StatisticsView = () => {
     const router = useRouter();
 
-    const tabs = useMemo(() => ([
-        i18n.t("avg_grade"),
-        i18n.t("reading_statistics"),
-        i18n.t("weekly_statistics"),
+    const sections = useMemo(() => ([
+        i18n.t("simple_reading_statistics"),
+        i18n.t("reading_speed_statistics"),
     ]), [])
 
-    const [avgData, setAvgData] = useState<GradeByParticipant[] | undefined>(undefined)
-    const [dailyData, setDailyData] = useState<ParticipantDailyStats[] | undefined>(undefined)
-    const [weeklyData, setWeeklyData] = useState<WeeklyStatsByParticipant[] | undefined>(undefined)
-
-    const [currentTab, setCurrentTab] = useState(0)
-    const [chartType, setChartType] = useState<StatisticsType>("avgGrade")
-
-    const changeTab = (newTab: number) => {
-        if (newTab < 0 || newTab >= tabs.length) {
-            return
-        }
-        setCurrentTab(newTab)
-        if (newTab === 0) {
-            setChartType("avgGrade")
-        } else if (newTab === 1) {
-            setChartType("daily")
-        } else {
-            setChartType("weekly")
-        }
-    }
+    const [currentSection, setCurrentSection] = useState(0)
 
     const onCancel = useCallback(() => {
         router.back();
@@ -57,73 +34,6 @@ const StatisticsView = () => {
         onCancel();
         return true;
     });
-
-    const getAvgGradeApi = useApi(
-        statisticsApi.getAvgGrade,
-        {
-            onSuccess: (data) => {
-                setAvgData(data)
-            },
-            errorHandler: {
-                title: i18n.t("error_header"),
-                message: i18n.t("error_load_statistics"),
-                options: {
-                    tryAgain: true,
-                    navigate: {
-                        mode: "back",
-                    },
-                },
-            },
-        },
-    )
-
-    const getDailyApi = useApi(
-        statisticsApi.getDaily,
-        {
-            onSuccess: (data) => {
-                setDailyData(data)
-            },
-            errorHandler: {
-                title: i18n.t("error_header"),
-                message: i18n.t("error_load_statistics"),
-                options: {
-                    tryAgain: true,
-                    navigate: {
-                        mode: "back",
-                    },
-                },
-            },
-        },
-    )
-
-    const getWeeklyApi = useApi(
-        statisticsApi.getWeekly,
-        {
-            onSuccess: (data) => {
-                setWeeklyData(data)
-            },
-            errorHandler: {
-                title: i18n.t("error_header"),
-                message: i18n.t("error_load_statistics"),
-                options: {
-                    tryAgain: true,
-                    navigate: {
-                        mode: "back",
-                    },
-                },
-            },
-        },
-    )
-
-    useEffect(() => {
-        if (currentTab === 0) {
-            getAvgGradeApi.execute()
-        } else if (currentTab === 1) {
-            getDailyApi.execute()
-        } else {
-            getWeeklyApi.execute()
-        }
-    }, [currentTab]);
 
     return (
         <>
@@ -154,36 +64,11 @@ const StatisticsView = () => {
                         </CustomText>
                         <SegmentedControl
                             variant="white"
-                            options={tabs}
-                            currentTab={currentTab}
-                            onChange={changeTab}
+                            options={sections}
+                            currentTab={currentSection}
+                            onChange={setCurrentSection}
                         />
-                        <YStack
-                            borderRadius={24}
-                            paddingVertical={20}
-                            backgroundColor="$gray-100"
-                            borderWidth={1}
-                            borderColor="$gray-85"
-                            height="100%"
-                            flex={1}
-                            style={{
-                                shadowColor: "rgba(43, 32, 19, 0.06)",
-                                shadowOffset: {width: 0, height: 3},
-                                shadowRadius: 8,
-                                shadowOpacity: 1,
-                            }}
-                        >
-                            {getAvgGradeApi.loading || !avgData ? (
-                                <ActivityIndicator size="large" color="#CB5A2E"/>
-                            ) : (
-                                <StatisticsChart
-                                    avgData={avgData}
-                                    dailyData={dailyData}
-                                    weeklyData={weeklyData}
-                                    type={chartType}
-                                />
-                            )}
-                        </YStack>
+                        {currentSection === 0 ? <SimpleReadingStatistics/> : <ReadingSpeedStatistics/>}
                     </YStack>
                 </ScrollView>
             </YStack>
