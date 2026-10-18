@@ -41,6 +41,21 @@ export interface ReadingSpeedMetrics {
     accuracy: number;
 }
 
+// Один варіант відповіді невеликого тесту на розуміння прочитаного
+// (генерується на Python одразу в "result", services/comprehension_quiz.py)
+// — ефемерний, ніде не персистується, тому без id/selected (на відміну від
+// types/Answer.ts, який належить "великим" тестам книги).
+export interface ComprehensionQuizAnswer {
+    answer: string;
+    correct: boolean;
+}
+
+export interface ComprehensionQuizQuestion {
+    question: string;
+    quote: string;
+    answers: ComprehensionQuizAnswer[];
+}
+
 export interface ResultMessage {
     type: "result";
     text_id: string;
@@ -50,6 +65,9 @@ export interface ResultMessage {
     // див. StressStatus / readingSpeedAttemptApi. Відсутній, якщо збереження
     // в Java не вдалося — тоді шар наголосу теж не запускається на бекенді.
     attempt_id: number | null;
+    // 1-3 питання (кількість обирає AI сам залежно від уривка) — null, якщо
+    // прочитаний фрагмент закороткий для тесту або генерація не вдалася.
+    quiz: ComprehensionQuizQuestion[] | null;
 }
 
 export type ReadingSpeedServerMessage = ReferenceTextMessage | WordEventMessage | ResultMessage;

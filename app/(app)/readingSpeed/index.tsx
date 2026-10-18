@@ -9,13 +9,14 @@ import Header from "@/components/Header";
 import HeaderButton from "@/components/buttons/HeaderButton";
 import PrimaryButton from "@/components/buttons/PrimaryButton";
 import {CustomText} from "@/components/CustomText";
+import {ComprehensionQuiz} from "@/components/readingSpeed/ComprehensionQuiz";
 import {HighlightedWordText} from "@/components/readingSpeed/HighlightedWordText";
 import i18n from "@/localization/i18n";
 import {useUserMode} from "@/hooks/userModeContext";
 import {requestMicrophonePermission, startAudioStream, stopAudioStream} from "@/services/audioStreamRecorder";
 import {ReadingSpeedSocket} from "@/services/readingSpeedSocket";
 import readingSpeedAttemptApi from "@/api/endpoints/readingSpeedAttemptApi";
-import {ReadingSpeedMetrics, ReferenceWord, StressStatus, WordStatus} from "@/types/ReadingSpeed";
+import {ComprehensionQuizQuestion, ReadingSpeedMetrics, ReferenceWord, StressStatus, WordStatus} from "@/types/ReadingSpeed";
 
 // Скільки чекати між опитуваннями стану шару перевірки наголосу — forced
 // alignment триває секунди, не мілісекунди (docs/reading-speed-implementation-
@@ -40,6 +41,7 @@ const ReadingSpeed = () => {
     const [statuses, setStatuses] = useState<Record<number, WordStatus>>({});
     const [tentativeStatuses, setTentativeStatuses] = useState<Record<number, WordStatus>>({});
     const [metrics, setMetrics] = useState<ReadingSpeedMetrics | null>(null);
+    const [quiz, setQuiz] = useState<ComprehensionQuizQuestion[] | null>(null);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
     // Окремий (асинхронний, рахується в фоні на бекенді) шар перевірки
@@ -145,6 +147,7 @@ const ReadingSpeed = () => {
         setStatuses({});
         setTentativeStatuses({});
         setMetrics(null);
+        setQuiz(null);
         setAttemptId(null);
         setStressStatus(null);
         setStressProgress(null);
@@ -175,6 +178,7 @@ const ReadingSpeed = () => {
                 onResult: (result) => {
                     stopReadingTimer();
                     setMetrics(result.metrics);
+                    setQuiz(result.quiz);
                     setPhase("finished");
                     stopAudioStream();
                     if (result.attempt_id !== null) {
@@ -405,6 +409,13 @@ const ReadingSpeed = () => {
                                     </YStack>
                                 )}
                             </YStack>
+
+                            {quiz && quiz.length > 0 && (
+                                <ScrollView style={{flex: 1}}>
+                                    <ComprehensionQuiz questions={quiz}/>
+                                </ScrollView>
+                            )}
+
                             <PrimaryButton
                                 text={i18n.t("reading_speed_try_again")}
                                 onPress={handleRestart}
