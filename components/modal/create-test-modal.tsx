@@ -1,4 +1,4 @@
-import React, {FC, useCallback, useEffect, useState} from "react";
+import React, {FC, useCallback, useState} from "react";
 import {ScrollView, XStack, YStack} from "tamagui";
 import {Controller, useForm} from "react-hook-form";
 import {ActivityIndicator, TouchableOpacity} from "react-native";
@@ -11,9 +11,7 @@ import SecondaryButton from "@/components/buttons/SecondaryButton";
 import useWindow from "@/hooks/useWindow";
 import LabelledInput from "@/components/LabelledInput";
 import useApi from "@/hooks/useApi";
-import testApi from "@/api/endpoints/testApi";
-import {Test} from "@/types/Test";
-import {useAppSelector} from "@/store";
+import classroomApi from "@/api/endpoints/classroomApi";
 import BookSelectModal from "@/components/modal/book-select-modal";
 import {Book} from "@/types/Book";
 import NextIcon from "@/assets/images/icons/next-icon.svg";
@@ -22,8 +20,10 @@ type Props = {
     onClose: () => void;
     isOpen: boolean;
     onSave: () => void;
-    participantId: number | undefined;
-    participantName: string;
+    classroomId: number;
+    classroomName: string;
+    // Тест можна створити лише по книгах, призначених цьому класу.
+    books: Book[];
 }
 
 type FormValues = {
@@ -33,10 +33,9 @@ type FormValues = {
     questionsAmount: string;
 };
 
-const CreateTestModal: FC<Props> = ({onClose, isOpen, onSave, participantId, participantName}) => {
+const CreateTestModal: FC<Props> = ({onClose, isOpen, onSave, classroomId, classroomName, books}) => {
     const {keyboardVisible, availableContentHeight} = useWindow()
 
-    const {testBook} = useAppSelector((state) => state.book)
     const [selectedBook, setSelectedBook] = useState<Book | undefined>(undefined)
 
     const [isBookSelectModalOpen, setIsBookSelectModalOpen] = useState(false)
@@ -65,20 +64,15 @@ const CreateTestModal: FC<Props> = ({onClose, isOpen, onSave, participantId, par
     const onCancel = useCallback(() => {
         onClose();
         handleReset();
+        setSelectedBook(undefined);
     }, [onClose, handleReset]);
 
-    useEffect(() => {
-        if (testBook) {
-            setValue("bookName", testBook.title)
-        }
-    }, [testBook, setValue]);
-
     const createTestApi = useApi(
-        testApi.createTest,
+        classroomApi.createTest,
         {
             onSuccess: () => {
-                onClose();
-                handleReset();
+                onSave();
+                onCancel();
             },
             errorHandler: {
                 title: i18n.t("error"),
@@ -92,40 +86,26 @@ const CreateTestModal: FC<Props> = ({onClose, isOpen, onSave, participantId, par
     );
 
     const handleSave = useCallback(async (data: FormValues) => {
-        if (!testBook && !selectedBook) {
+        if (!selectedBook) {
             return;
         }
-        try {
-            const bookId = testBook ? testBook.id : selectedBook?.id
-            console.log(bookId)
-            const test = {
-                progress: {
-                    book: {
-                        id: bookId,
-                    },
-                    participant: {
-                        id: participantId,
-                    },
-                },
+        await createTestApi.execute({
+            classroomId: classroomId.toString(),
+            test: {
+                bookId: selectedBook.id,
                 startPage: Number(data.startPage),
                 endPage: Number(data.endPage),
                 questionsAmount: Number(data.questionsAmount),
-            } as Test
-
-            await createTestApi.execute(test).then();
-            onSave();
-            onCancel();
-        } catch (error) {
-            console.error("Error creating test:", error);
-        }
-    }, [createTestApi, handleReset, onClose]);
+            },
+        });
+    }, [createTestApi, classroomId, selectedBook]);
 
     const isValid =
         formValues.bookName !== "" &&
         formValues.startPage !== "0" &&
         formValues.endPage !== "0" &&
         Number(formValues.startPage) < Number(formValues.endPage) &&
-        (testBook !== undefined || selectedBook !== undefined);
+        selectedBook !== undefined;
 
     const handleBookSelect = (book: Book) => {
         setSelectedBook(book)
@@ -138,14 +118,7 @@ const CreateTestModal: FC<Props> = ({onClose, isOpen, onSave, participantId, par
                 isOpen={isOpen}
                 onClose={onCancel}
                 headerText={i18n.t("create_test")}
-                headerDescription={
-                    testBook ?
-                        i18n.t("create_test_modal_description", {
-                            bookName: testBook?.title || "",
-                            childName: participantName,
-                        }) :
-                        i18n.t("create_test_for_child", {childName: participantName})
-                }
+                headerDescription={i18n.t("create_test_for_classroom", {classroomName})}
                 modalActions={(
                     <XStack gap={6}>
                         <SecondaryButton
@@ -186,13 +159,12 @@ const CreateTestModal: FC<Props> = ({onClose, isOpen, onSave, participantId, par
                                         >
                                             <Input
                                                 inputEnabled={false}
-                                                disabled={testBook !== undefined}
                                                 id="bookName"
                                                 value={value}
                                                 setValue={onChange}
                                                 placeholder={i18n.t("book")}
                                                 errorMessage={errors.bookName?.message}
-                                                rightElement={<NextIcon fill="black" disabled={testBook !== undefined}/>}
+                                                rightElement={<NextIcon fill="black"/>}
                                             />
                                         </TouchableOpacity>
                                     )}
@@ -276,6 +248,7 @@ const CreateTestModal: FC<Props> = ({onClose, isOpen, onSave, participantId, par
                 isOpen={isBookSelectModalOpen}
                 onClose={() => setIsBookSelectModalOpen(false)}
                 onSelectBook={handleBookSelect}
+                books={books}
             />
         </>
     )

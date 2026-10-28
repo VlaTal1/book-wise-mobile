@@ -16,14 +16,14 @@ import {Book} from "@/types/Book";
 import ParticipantButton from "@/components/buttons/ParticipantButton";
 import BottomButtonGroup from "@/components/buttons/BottomButtonGroup";
 import PrimaryButton from "@/components/buttons/PrimaryButton";
-import ParticipantSelectModal from "@/components/modal/participant-select-modal";
-import accessApi from "@/api/endpoints/accessApi";
-import {useUserMode} from "@/hooks/userModeContext";
+import ClassroomSelectModal from "@/components/modal/classroom-select-modal";
+import classroomApi from "@/api/endpoints/classroomApi";
+import {useRole} from "@/hooks/roleContext";
 import {useAppDispatch} from "@/store";
 import {resetTestBook, setTestBook} from "@/store/bookSlice";
 
 const BookDetails = () => {
-    const {isParentMode} = useUserMode();
+    const {isTeacher} = useRole();
     const {id} = useLocalSearchParams();
 
     const router = useRouter();
@@ -31,7 +31,7 @@ const BookDetails = () => {
 
     const [book, setBook] = useState<Book | undefined>(undefined);
 
-    const [isParticipantSelectModalOpen, setIsParticipantSelectModalOpen] = useState(false)
+    const [isClassroomSelectModalOpen, setIsClassroomSelectModalOpen] = useState(false)
 
     const onCancel = useCallback(() => {
         dispatch(resetTestBook());
@@ -61,15 +61,15 @@ const BookDetails = () => {
         },
     );
 
-    const grantAccessApi = useApi(
-        accessApi.grantAccess,
+    const assignBookApi = useApi(
+        classroomApi.assignBook,
         {
             onSuccess: () => {
                 invokeFetchBookApi()
             },
             errorHandler: {
                 title: i18n.t("error"),
-                message: `${i18n.t("failed_to_grant_access")}\n${i18n.t("please_try_again_later")}`,
+                message: `${i18n.t("failed_to_assign_book")}\n${i18n.t("please_try_again_later")}`,
                 options: {
                     tryAgain: true,
                     cancel: true,
@@ -86,14 +86,14 @@ const BookDetails = () => {
         invokeFetchBookApi()
     }, []);
 
-    const handleChildSelect = useCallback(async (childId: string) => {
+    const handleClassroomSelect = useCallback(async (classroomId: string) => {
         if (book) {
-            await grantAccessApi.execute({
+            await assignBookApi.execute({
+                classroomId,
                 bookId: book.id.toString(),
-                participantId: childId,
             })
         }
-    }, [book, grantAccessApi]);
+    }, [book, assignBookApi]);
 
     if (fetchBookByIdApi.loading || !book) {
         return (
@@ -178,12 +178,12 @@ const BookDetails = () => {
                             borderRadius={999}
                         >
                             <CustomText size="p3Medium" color="$gray-40">
-                                PDF Document
+                                {i18n.t("pdf_document")}
                             </CustomText>
                         </XStack>
                     </YStack>
 
-                    {isParentMode && (
+                    {isTeacher && (
                         <YStack gap={12}>
                             <CustomText size="h5Medium" color="$gray-20" paddingLeft={4}>
                                 {i18n.t("list_of_accesses") || "Student Access Control"}
@@ -208,10 +208,10 @@ const BookDetails = () => {
 
             <BottomButtonGroup>
                 <YStack gap={6}>
-                    {isParentMode && (
+                    {isTeacher && (
                         <PrimaryButton
-                            onPress={() => setIsParticipantSelectModalOpen(true)}
-                            text={i18n.t("grant_access")}
+                            onPress={() => setIsClassroomSelectModalOpen(true)}
+                            text={i18n.t("assign_to_classroom")}
                         />
                     )}
                     <PrimaryButton
@@ -221,10 +221,10 @@ const BookDetails = () => {
                 </YStack>
             </BottomButtonGroup>
 
-            <ParticipantSelectModal
-                onClose={() => setIsParticipantSelectModalOpen(false)}
-                isOpen={isParticipantSelectModalOpen}
-                onSelectId={handleChildSelect}
+            <ClassroomSelectModal
+                onClose={() => setIsClassroomSelectModalOpen(false)}
+                isOpen={isClassroomSelectModalOpen}
+                onSelectId={handleClassroomSelect}
             />
         </>
     );

@@ -121,7 +121,7 @@ const WeeklyStatsChart: React.FC<Props> = ({data}) => {
 
     const renderParticipantSelector = () => (
         <View style={styles.selectorContainer}>
-            <Text style={styles.selectorTitle}>{i18n.t("select_child")}</Text>
+            <Text style={styles.selectorTitle}>{i18n.t("select_student")}</Text>
             <ScrollView horizontal={true} showsHorizontalScrollIndicator={false}>
                 <View style={styles.participantButtons}>
                     {data.map((item) => (

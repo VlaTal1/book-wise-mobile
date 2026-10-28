@@ -16,7 +16,7 @@ import ArrowRightIcon from "@/assets/images/icons/next-icon.svg";
 type Props = {
     onClose: () => void;
     isOpen: boolean;
-    onSelectId?: (childId: string) => void;
+    onSelectId?: (participantId: string) => void;
     onSelectParticipant?: (participant: Participant) => void;
 }
 
@@ -27,14 +27,14 @@ const ParticipantSelectModal: FC<Props> = ({onClose, isOpen, onSelectId, onSelec
     const [participants, setParticipants] = useState<Participant[]>([]);
 
     const fetchAllParticipantApi = useApi(
-        participantApi.fetchAllParticipants,
+        participantApi.fetchStudents,
         {
             onSuccess: (data) => {
                 setParticipants(data);
             },
             errorHandler: {
                 title: i18n.t("error"),
-                message: `${i18n.t("failed_to_fetch_children")}\n${i18n.t("please_try_again_later")}`,
+                message: `${i18n.t("failed_to_fetch_students")}\n${i18n.t("please_try_again_later")}`,
                 options: {
                     tryAgain: true,
                     cancel: true,
@@ -75,7 +75,7 @@ const ParticipantSelectModal: FC<Props> = ({onClose, isOpen, onSelectId, onSelec
             <Modal
                 isOpen={isOpen}
                 onClose={onCancel}
-                headerText={i18n.t("select_child")}
+                headerText={i18n.t("select_student")}
                 modalActions={(
                     <XStack gap={6}>
                         <SecondaryButton

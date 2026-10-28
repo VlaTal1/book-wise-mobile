@@ -70,7 +70,7 @@ const ReadingSpeedStatistics = () => {
     );
 
     const fetchParticipantsApi = useApi(
-        participantApi.fetchAllParticipants,
+        participantApi.fetchStudents,
         {
             onSuccess: (participants) => {
                 if (selectedParticipantId === null && participants.length > 0) {
@@ -79,7 +79,7 @@ const ReadingSpeedStatistics = () => {
             },
             errorHandler: {
                 title: i18n.t("error"),
-                message: `${i18n.t("failed_to_fetch_children")}\n${i18n.t("please_try_again_later")}`,
+                message: `${i18n.t("failed_to_fetch_students")}\n${i18n.t("please_try_again_later")}`,
                 options: {tryAgain: true, cancel: true},
             },
         },
@@ -145,7 +145,7 @@ const ReadingSpeedStatistics = () => {
                         <ActivityIndicator size="large" color="#CB5A2E"/>
                     ) : participants.length === 0 ? (
                         <CustomText size="p1Regular" color="$gray-40" textAlign="center">
-                            {i18n.t("reading_history_no_children")}
+                            {i18n.t("no_students_yet")}
                         </CustomText>
                     ) : (
                         <YStack gap={16}>

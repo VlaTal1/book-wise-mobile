@@ -8,7 +8,7 @@ import {useFonts} from "expo-font";
 import tamaguiConfig from "@/styles/tamagui.config";
 import {LanguageProvider} from "@/components/provider/LanguageProvider";
 import {SupabaseAuthProvider} from "@/auth/SupabaseAuthProvider";
-import {UserModeProvider} from "@/hooks/userModeContext";
+import {RoleProvider} from "@/hooks/roleContext";
 import {Provider} from "react-redux";
 import {store} from "@/store";
 
@@ -45,7 +45,7 @@ export default function Root() {
             <TamaguiProvider config={tamaguiConfig} defaultTheme={colorScheme!}>
                 <Provider store={store}>
                     <SupabaseAuthProvider>
-                        <UserModeProvider>
+                        <RoleProvider>
                             <ImageBackground
                                 style={[styles.backgroundImage, {backgroundColor}]}
                             >
@@ -53,7 +53,7 @@ export default function Root() {
                                     <Slot/>
                                 </SafeAreaView>
                             </ImageBackground>
-                        </UserModeProvider>
+                        </RoleProvider>
                     </SupabaseAuthProvider>
                 </Provider>
             </TamaguiProvider>

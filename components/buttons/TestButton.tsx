@@ -1,6 +1,7 @@
 import React, {FC, useMemo} from "react";
 import {GetProps, ThemeableStack, XStack, YStack} from "tamagui";
 import Feather from "@expo/vector-icons/Feather";
+import {ActivityIndicator} from "react-native";
 
 import {CustomText} from "@/components/CustomText";
 import {Test} from "@/types/Test";
@@ -14,28 +15,46 @@ type Props = {
 } & GetProps<typeof ThemeableStack>;
 
 const TestButton: FC<Props> = ({test, onPress, disabled = false, ...props}) => {
+    // Питання генерує Python-сервіс асинхронно (RabbitMQ) — поки вони не
+    // готові, пройти тест неможливо.
+    const isGenerating = test.generationStatus === "GENERATING";
+
     const statusDetails = useMemo(() => {
+        if (isGenerating) {
+            return {
+                bg: "#EEF1F6",
+                text: "#4A5A78",
+                label: i18n.t("test_generating"),
+            };
+        }
+        if (test.generationStatus === "FAILED") {
+            return {
+                bg: "#FBEAE8",
+                text: "#C1443A",
+                label: i18n.t("test_generation_failed"),
+            };
+        }
         switch (test.completed) {
             case CompleteStatus.COMPLETED:
                 return {
                     bg: "#E7F3EA",
                     text: "#2F6B45",
-                    label: i18n.t("COMPLETED") || "Completed",
+                    label: i18n.t("COMPLETED"),
                 };
             case CompleteStatus.IN_PROGRESS:
                 return {
                     bg: "#FBF0D9",
                     text: "#B07A1E",
-                    label: i18n.t("IN_PROGRESS") || "In Progress",
+                    label: i18n.t("IN_PROGRESS"),
                 };
             default:
                 return {
                     bg: "#FBF6EC",
                     text: "#7A6248",
-                    label: i18n.t("NOT_STARTED") || "Not Started",
+                    label: i18n.t("NOT_STARTED"),
                 };
         }
-    }, [test.completed]);
+    }, [test.completed, test.generationStatus, isGenerating]);
 
     return (
         <ThemeableStack
@@ -76,7 +95,9 @@ const TestButton: FC<Props> = ({test, onPress, disabled = false, ...props}) => {
                         paddingVertical={4}
                         borderRadius={999}
                         alignItems="center"
+                        gap={6}
                     >
+                        {isGenerating && <ActivityIndicator size={10} color={statusDetails.text}/>}
                         <CustomText
                             size="p3Medium"
                             color={statusDetails.text}
@@ -111,7 +132,7 @@ const TestButton: FC<Props> = ({test, onPress, disabled = false, ...props}) => {
                         borderRadius={14}
                     >
                         <CustomText size="p2Medium" color="#A8451F">
-                            {i18n.t("test_status") || "Status:"} {i18n.t("COMPLETED")}
+                            {i18n.t("test_status")} {i18n.t("COMPLETED")}
                         </CustomText>
                         <CustomText size="p2Medium" color="#A8451F">
                             {i18n.t("result_grade", {grade: test.grade})}

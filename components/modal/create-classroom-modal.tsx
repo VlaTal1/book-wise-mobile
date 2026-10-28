@@ -12,20 +12,20 @@ import SecondaryButton from "@/components/buttons/SecondaryButton";
 import useWindow from "@/hooks/useWindow";
 import LabelledInput from "@/components/LabelledInput";
 import useApi from "@/hooks/useApi";
-import participantApi from "@/api/endpoints/participantApi";
-import {Participant} from "@/types/Paticipant";
+import classroomApi from "@/api/endpoints/classroomApi";
+import {Classroom} from "@/types/Classroom";
 
 type Props = {
     onClose: () => void;
     isOpen: boolean;
-    onSave: () => void;
+    onSave: (classroom: Classroom) => void;
 }
 
 type FormValues = {
     name: string;
 };
 
-const AddParticipantModal: FC<Props> = ({onClose, isOpen, onSave}) => {
+const CreateClassroomModal: FC<Props> = ({onClose, isOpen, onSave}) => {
     const {keyboardVisible, availableContentHeight} = useWindow()
 
     const {control, handleSubmit, setValue, watch, reset, formState: {errors, isDirty}} = useForm<FormValues>({
@@ -48,16 +48,17 @@ const AddParticipantModal: FC<Props> = ({onClose, isOpen, onSave}) => {
         handleReset();
     }, [onClose, handleReset]);
 
-    const saveParticipantApi = useApi(
-        participantApi.saveParticipant,
+    const saveApi = useApi(
+        classroomApi.createClassroom,
         {
-            onSuccess: () => {
+            onSuccess: (classroom) => {
                 onClose();
                 handleReset();
+                onSave(classroom);
             },
             errorHandler: {
                 title: i18n.t("error"),
-                message: `${i18n.t("failed_to_save_child")}\n${i18n.t("please_try_again_later")}`,
+                message: `${i18n.t("failed_to_create_classroom")}\n${i18n.t("please_try_again_later")}`,
                 options: {
                     tryAgain: true,
                     cancel: true,
@@ -67,11 +68,8 @@ const AddParticipantModal: FC<Props> = ({onClose, isOpen, onSave}) => {
     );
 
     const handleSave = useCallback(async (data: FormValues) => {
-        const participant = {
-            name: data.name,
-        } as Participant;
-        await saveParticipantApi.execute({participant: participant}).then(onSave);
-    }, [saveParticipantApi]);
+        await saveApi.execute({name: data.name.trim()});
+    }, [saveApi]);
 
     const isValid = !isBlank(formValues.name)
 
@@ -79,7 +77,7 @@ const AddParticipantModal: FC<Props> = ({onClose, isOpen, onSave}) => {
         <Modal
                 isOpen={isOpen}
                 onClose={onCancel}
-                headerText={i18n.t("add_child")}
+                headerText={i18n.t("create_classroom")}
                 modalActions={(
                     <XStack gap={6}>
                         <SecondaryButton
@@ -89,8 +87,8 @@ const AddParticipantModal: FC<Props> = ({onClose, isOpen, onSave}) => {
                         />
                         <PrimaryButton
                             flex={1}
-                            text={saveParticipantApi.loading ? "" : i18n.t("save")}
-                            disabled={!isValid || saveParticipantApi.loading}
+                            text={saveApi.loading ? "" : i18n.t("save")}
+                            disabled={!isValid || saveApi.loading}
                             onPress={handleSubmit(handleSave)}
                         />
                     </XStack>
@@ -98,12 +96,11 @@ const AddParticipantModal: FC<Props> = ({onClose, isOpen, onSave}) => {
                 isKeyboardVisible={keyboardVisible}
                 height={availableContentHeight}
             >
-                {saveParticipantApi.loading ? (
+                {saveApi.loading ? (
                     <ActivityIndicator size="small" color="#CB5A2E"/>
                 ) : (
                     <ScrollView contentContainerStyle={{flexGrow: 1}}>
                         <YStack gap={12}>
-                            {/* Book Name */}
                             <LabelledInput label={i18n.t("name")} htmlFor="name">
                                 <Controller
                                     control={control}
@@ -119,7 +116,7 @@ const AddParticipantModal: FC<Props> = ({onClose, isOpen, onSave}) => {
                                             id="name"
                                             value={value}
                                             setValue={onChange}
-                                            placeholder={i18n.t("child_name")}
+                                            placeholder={i18n.t("classroom_name")}
                                             errorMessage={errors.name?.message}
                                         />
                                     )}
@@ -132,4 +129,4 @@ const AddParticipantModal: FC<Props> = ({onClose, isOpen, onSave}) => {
     )
 }
 
-export default AddParticipantModal
+export default CreateClassroomModal

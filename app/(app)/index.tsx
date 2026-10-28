@@ -1,8 +1,8 @@
-import React, {useMemo, useState} from "react";
+import React, {useCallback, useMemo, useState} from "react";
 import {Circle, View, XStack, YStack} from "tamagui";
 import { BackHandler} from "react-native";
 import {useBackHandler} from "@react-native-community/hooks";
-import {useRouter} from "expo-router";
+import {useFocusEffect, useRouter} from "expo-router";
 
 import BurgerIcon from "@/assets/images/icons/burger-icon.svg";
 import {useAuth} from "@/auth/SupabaseAuthProvider";
@@ -11,13 +11,18 @@ import {HomeMenuCard} from "@/components/home/HomeMenuCard";
 import {CustomText} from "@/components/CustomText";
 import i18n from "@/localization/i18n";
 import BurgerMenu from "@/components/BurgerMenu";
-import {useUserMode} from "@/hooks/userModeContext";
+import {useRole} from "@/hooks/roleContext";
 import {getAvatarColor, getInitial} from "@/constants/avatarPalette";
 
 const Home = () => {
-    const {user, profile, isLoading: isProfileLoading, signOut} = useAuth();
-    const {isParentMode} = useUserMode();
+    const {user, signOut} = useAuth();
+    const {profile, isTeacher, isStudent, refreshProfile} = useRole();
     const router = useRouter();
+
+    // Після вступу до класу назва класу на картці має оновитися.
+    useFocusEffect(useCallback(() => {
+        refreshProfile();
+    }, [refreshProfile]));
 
     useBackHandler(() => {
         BackHandler.exitApp();
@@ -66,7 +71,7 @@ const Home = () => {
                             {i18n.t("welcome_to")}
                         </CustomText>
                         <CustomText size="h1" color="$gray-20">
-                            {i18n.t("app_name")}
+                            {profile?.name ?? i18n.t("app_name")}
                         </CustomText>
                     </YStack>
                 </YStack>
@@ -81,20 +86,21 @@ const Home = () => {
                         type="tests"
                         onPress={() => router.navigate("/tests")}
                     />
-                    {!isParentMode && (
+                    {isStudent && (
                         <HomeMenuCard
                             title={i18n.t("reading_speed_title")}
                             type="readingSpeed"
                             onPress={() => router.navigate("/readingSpeed")}
                         />
                     )}
-                    {isParentMode && (
-                        <HomeMenuCard
-                            title={i18n.t("children")}
-                            type="participants"
-                            onPress={() => router.navigate("/participants")}
-                        />
-                    )}
+                    <HomeMenuCard
+                        title={i18n.t(isTeacher ? "classrooms" : "my_classroom")}
+                        type="classrooms"
+                        description={isStudent ? (profile?.classroomName ?? i18n.t("join_classroom_hint")) : undefined}
+                        onPress={() => router.navigate(isStudent && profile?.classroomId
+                            ? `/classroom/${profile.classroomId}`
+                            : "/classrooms")}
+                    />
                     <HomeMenuCard
                         title={i18n.t("statistics")}
                         type="statistics"

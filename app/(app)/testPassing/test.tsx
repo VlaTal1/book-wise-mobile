@@ -9,6 +9,7 @@ import CustomStackScreen from "@/components/CustomStackScreen";
 import {CustomText} from "@/components/CustomText";
 import {savePassedTest, selectAnswer} from "@/store/testSlice";
 import {Status} from "@/types";
+import i18n from "@/localization/i18n";
 
 const Test = () => {
     const dispatch = useAppDispatch();
@@ -63,10 +64,10 @@ const Test = () => {
                 <YStack gap={8}>
                     <XStack justifyContent="space-between" alignItems="center">
                         <CustomText size="p3Medium" color="$gray-40">
-                            READING ASSESSMENT
+                            {i18n.t("reading_assessment").toUpperCase()}
                         </CustomText>
                         <CustomText size="p3Medium" color="#CB5A2E">
-                            {`Question ${currentQuestionIndex + 1} of ${currentTest.questions.length}`}
+                            {i18n.t("reading_speed_quiz_progress", {current: currentQuestionIndex + 1, total: currentTest.questions.length})}
                         </CustomText>
                     </XStack>
                     <View backgroundColor="$gray-85" height={8} borderRadius={999} overflow="hidden">

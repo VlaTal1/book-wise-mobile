@@ -5,6 +5,7 @@ import {AlertButton} from "react-native/Libraries/Alert/Alert";
 import {ExpoRouter} from "expo-router/build/typed-routes/types";
 
 import {ApiErrorCode, ApiResponse} from "@/api";
+import i18n from "@/localization/i18n";
 
 type ErrorHandler = {
     title: string;
@@ -80,8 +81,8 @@ function useApi<T, P = void>(
             } else {
                 // Default error handler
                 errorHandler = {
-                    title: "Error",
-                    message: "An unexpected error occurred. Please try again later.",
+                    title: i18n.t("error"),
+                    message: i18n.t("please_try_again_later"),
                 };
             }
 
@@ -90,7 +91,7 @@ function useApi<T, P = void>(
             // Add "try again" button if requested
             if (errorHandler.options?.tryAgain) {
                 buttons.push({
-                    text: "Try Again",
+                    text: i18n.t("try_again"),
                     onPress: () => execute(lastParams as P),
                 });
             }
@@ -103,7 +104,7 @@ function useApi<T, P = void>(
             // Add cancel button if none provided
             if (buttons.length === 0 || errorHandler.options?.cancel) {
                 buttons.push({
-                    text: "OK",
+                    text: i18n.t("ok"),
                     style: "cancel",
                     onPress: () => {
                         if (errorHandler.options?.navigate) {

@@ -15,11 +15,11 @@ import PrimaryButton from "@/components/buttons/PrimaryButton";
 import AddBookModal from "@/components/modal/add-book-modal";
 import BottomButtonGroup from "@/components/buttons/BottomButtonGroup";
 import BookButton from "@/components/buttons/BookButton";
-import {useUserMode} from "@/hooks/userModeContext";
+import {useRole} from "@/hooks/roleContext";
 import {CustomText} from "@/components/CustomText";
 
 const Books = () => {
-    const {childId, isChildMode, isParentMode} = useUserMode();
+    const {isTeacher} = useRole();
     const router = useRouter();
 
     const [books, setBooks] = useState<Book[]>([]);
@@ -55,33 +55,10 @@ const Books = () => {
         },
     );
 
-    const fetchBooksByParticipantIdApi = useApi(
-        bookApi.fetchBooksByParticipantId,
-        {
-            onSuccess: (data) => {
-                setBooks(data);
-            },
-            errorHandler: {
-                title: i18n.t("error"),
-                message: `${i18n.t("failed_to_fetch_books")}\n${i18n.t("please_try_again_later")}`,
-                options: {
-                    tryAgain: true,
-                    cancel: true,
-                    navigate: {
-                        mode: "back",
-                    },
-                },
-            },
-        },
-    );
-
+    // Вчителю бекенд повертає завантажені ним книги, учню — книги його класу.
     const invokeFetchBooks = useCallback(() => {
-        if (isChildMode && childId) {
-            fetchBooksByParticipantIdApi.execute(childId.toString())
-        } else {
-            fetchBooksApi.execute();
-        }
-    }, [childId, fetchBooksApi, fetchBooksByParticipantIdApi, isChildMode]);
+        fetchBooksApi.execute();
+    }, [fetchBooksApi]);
 
     useEffect(() => {
         invokeFetchBooks()
@@ -132,7 +109,7 @@ const Books = () => {
                 </ScrollView>
             </YStack>
 
-            {isParentMode && (
+            {isTeacher && (
                 <BottomButtonGroup>
                     <PrimaryButton
                         onPress={() => setIsAddBookModalOpen(true)}

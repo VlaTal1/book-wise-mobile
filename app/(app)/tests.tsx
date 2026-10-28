@@ -9,9 +9,7 @@ import i18n from "@/localization/i18n";
 import CustomStackScreen from "@/components/CustomStackScreen";
 import Header from "@/components/Header";
 import HeaderButton from "@/components/buttons/HeaderButton";
-import PrimaryButton from "@/components/buttons/PrimaryButton";
-import BottomButtonGroup from "@/components/buttons/BottomButtonGroup";
-import {useUserMode} from "@/hooks/userModeContext";
+import {useRole} from "@/hooks/roleContext";
 import {Test} from "@/types/Test";
 import testApi from "@/api/endpoints/testApi";
 import {CustomText} from "@/components/CustomText";
@@ -22,17 +20,15 @@ import Input from "@/components/input";
 import NextIcon from "@/assets/images/icons/next-icon.svg";
 import {Participant} from "@/types/Paticipant";
 import ParticipantSelectModal from "@/components/modal/participant-select-modal";
-import CreateTestModal from "@/components/modal/create-test-modal";
 
 const Tests = () => {
-    const {childId, isParentMode} = useUserMode();
+    const {studentId, isTeacher} = useRole();
     const router = useRouter();
 
     const [tests, setTests] = useState<Test[]>([])
     const [currentParticipant, setCurrentParticipant] = useState<Participant | undefined>(undefined)
 
     const [isParticipantSelectModalOpen, setIsParticipantSelectModalOpen] = useState(false)
-    const [isCreateTestModalOpen, setIsCreateTestModalOpen] = useState(false)
 
     const onCancel = useCallback(() => {
         router.back();
@@ -61,7 +57,7 @@ const Tests = () => {
     );
 
     const fetchAllParticipantApi = useApi(
-        participantApi.fetchAllParticipants,
+        participantApi.fetchStudents,
         {
             onSuccess: (data) => {
                 if (data.length > 0) {
@@ -70,7 +66,7 @@ const Tests = () => {
             },
             errorHandler: {
                 title: i18n.t("error"),
-                message: `${i18n.t("failed_to_fetch_children")}\n${i18n.t("please_try_again_later")}`,
+                message: `${i18n.t("failed_to_fetch_students")}\n${i18n.t("please_try_again_later")}`,
                 options: {
                     tryAgain: true,
                     cancel: true,
@@ -87,19 +83,19 @@ const Tests = () => {
     }, [fetchAllParticipantApi]);
 
     const invokeFetchTestsByParticipantIdApi = useCallback(() => {
-        if (childId) {
-            fetchTestsByParticipantIdApi.execute(childId.toString());
+        if (studentId) {
+            fetchTestsByParticipantIdApi.execute(studentId);
         } else if (currentParticipant) {
             fetchTestsByParticipantIdApi.execute(currentParticipant.id.toString());
         }
-    }, [fetchTestsByParticipantIdApi, childId, currentParticipant]);
+    }, [fetchTestsByParticipantIdApi, studentId, currentParticipant]);
 
     useEffect(() => {
         invokeFetchTestsByParticipantIdApi()
-    }, [isParentMode, currentParticipant]);
+    }, [isTeacher, currentParticipant]);
 
     useEffect(() => {
-        if (isParentMode) {
+        if (isTeacher) {
             invokeFetchAllParticipants()
         }
     }, []);
@@ -132,14 +128,14 @@ const Tests = () => {
                             <CustomText size="h2">
                                 {i18n.t("tests")}
                             </CustomText>
-                            {isParentMode && (
-                                <LabelledInput label={i18n.t("child_name")} htmlFor="childName">
+                            {isTeacher && (
+                                <LabelledInput label={i18n.t("student")} htmlFor="studentName">
                                     <TouchableOpacity
                                         onPress={() => setIsParticipantSelectModalOpen(true)}
                                         activeOpacity={0.7}
                                     >
                                         <Input
-                                            id="childName"
+                                            id="studentName"
                                             inputEnabled={false}
                                             value={currentParticipant?.name || i18n.t("name")}
                                             placeholder={i18n.t("name")}
@@ -160,30 +156,11 @@ const Tests = () => {
                 </ScrollView>
             </YStack>
 
-            {isParentMode && (
-                <BottomButtonGroup>
-                    <PrimaryButton
-                        onPress={() => setIsCreateTestModalOpen(true)}
-                        text={i18n.t("assign_test")}
-                    />
-                </BottomButtonGroup>
-            )}
-
             <ParticipantSelectModal
                 onClose={() => setIsParticipantSelectModalOpen(false)}
                 isOpen={isParticipantSelectModalOpen}
                 onSelectParticipant={setCurrentParticipant}
             />
-
-            {isParentMode && currentParticipant && (
-                <CreateTestModal
-                    onClose={() => setIsCreateTestModalOpen(false)}
-                    isOpen={isCreateTestModalOpen}
-                    onSave={invokeFetchTestsByParticipantIdApi}
-                    participantId={currentParticipant.id}
-                    participantName={currentParticipant.name}
-                />
-            )}
         </>
     )
 }

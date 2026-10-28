@@ -17,7 +17,7 @@ import NextIcon from "@/assets/images/icons/next-icon.svg";
 import {getAccessToken} from "@/auth/supabase";
 import {getApiBaseUrl} from "@/api";
 import BottomButtonGroup from "@/components/buttons/BottomButtonGroup";
-import {useUserMode} from "@/hooks/userModeContext";
+import {useRole} from "@/hooks/roleContext";
 import useApi from "@/hooks/useApi";
 import testApi from "@/api/endpoints/testApi";
 import {Test} from "@/types/Test";
@@ -44,7 +44,7 @@ interface PdfState {
 }
 
 const Reader = () => {
-    const {childId, isChildMode} = useUserMode();
+    const {studentId, isStudent} = useRole();
     const {id} = useLocalSearchParams();
 
     const router = useRouter();
@@ -72,7 +72,7 @@ const Reader = () => {
     }
 
     const onCancel = () => {
-        if (isChildMode) {
+        if (isStudent) {
             endSession()
         }
         router.back();
@@ -84,10 +84,10 @@ const Reader = () => {
     });
 
     useEffect(() => {
-        if (isChildMode) {
+        if (isStudent) {
             dispatch(setStartTime())
         }
-    }, [isChildMode]);
+    }, [isStudent]);
 
     const downloadBook = async (bookId: string) => {
         try {
@@ -128,7 +128,7 @@ const Reader = () => {
         {
             onSuccess: (data) => {
                 setTest(data);
-                if (data && data.endPage && isChildMode) {
+                if (data && data.endPage && isStudent) {
                     dispatch(setCurrentTest(data));
                     setIsMessageOpen(true)
                 }
@@ -166,19 +166,19 @@ const Reader = () => {
     );
 
     const invokeFetchFirstTestByParticipantIdAndBookId = useCallback(() => {
-        if (childId) {
-            fetchFirstTestByParticipantIdAndBookId.execute({participantId: childId.toString(), bookId: id.toString()});
+        if (studentId) {
+            fetchFirstTestByParticipantIdAndBookId.execute({participantId: studentId, bookId: id.toString()});
         }
-    }, [fetchFirstTestByParticipantIdAndBookId, childId]);
+    }, [fetchFirstTestByParticipantIdAndBookId, studentId]);
 
     const invokeFetchProgressApi = useCallback(() => {
-        if (childId) {
+        if (studentId) {
             fetchProgressApi.execute({
-                participantId: childId.toString(),
+                participantId: studentId,
                 bookId: id.toString(),
             });
         }
-    }, [childId, fetchProgressApi, id]);
+    }, [studentId, fetchProgressApi, id]);
 
     useEffect(() => {
         if (id) {
@@ -189,10 +189,10 @@ const Reader = () => {
     }, [id]);
 
     useEffect(() => {
-        if (isChildMode && childId !== undefined) {
+        if (isStudent && studentId) {
             invokeFetchFirstTestByParticipantIdAndBookId();
         }
-    }, [childId, isChildMode]);
+    }, [studentId, isStudent]);
 
     useEffect(() => {
         if (id) {
@@ -220,7 +220,7 @@ const Reader = () => {
     };
 
     const goToNextPage = () => {
-        if (isChildMode && pdfState.currentPage === test?.endPage) {
+        if (isStudent && pdfState.currentPage === test?.endPage) {
             endSession()
             router.navigate("/testPassing/test")
             return
@@ -244,21 +244,21 @@ const Reader = () => {
             return true;
         }
         if (pdfState.currentPage >= pdfState.totalPages) {
-            if (isChildMode && pdfState.currentPage === test?.endPage) {
+            if (isStudent && pdfState.currentPage === test?.endPage) {
                 return false;
             }
             return true;
         }
     }
     const getNextButtonIcon = () => {
-        if (isChildMode && pdfState.currentPage === test?.endPage) {
+        if (isStudent && pdfState.currentPage === test?.endPage) {
             return undefined;
         }
         return NextIcon;
     }
 
     const getNextButtonText = () => {
-        if (isChildMode && pdfState.currentPage === test?.endPage) {
+        if (isStudent && pdfState.currentPage === test?.endPage) {
             return i18n.t("go_to_test");
         }
         return undefined;

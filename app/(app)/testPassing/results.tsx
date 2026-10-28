@@ -34,9 +34,9 @@ const Results = () => {
 
     const celebrationMessage = useMemo(() => {
         if (!currentTest) return "";
-        if (currentTest.grade >= 8) return "Spectacular Reading! 🎉";
-        if (currentTest.grade >= 5) return "Great Effort! 👍";
-        return "Keep Practicing! 📖";
+        if (currentTest.grade >= 8) return i18n.t("result_message_excellent");
+        if (currentTest.grade >= 5) return i18n.t("result_message_good");
+        return i18n.t("result_message_keep_practicing");
     }, [currentTest]);
 
     const totalQuestions = useMemo(() => {

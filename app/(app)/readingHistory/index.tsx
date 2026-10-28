@@ -12,15 +12,15 @@ import i18n from "@/localization/i18n";
 import useApi from "@/hooks/useApi";
 import participantApi from "@/api/endpoints/participantApi";
 import ParticipantButton from "@/components/buttons/ParticipantButton";
-import {useUserMode} from "@/hooks/userModeContext";
+import {useRole} from "@/hooks/roleContext";
 
-// Дитячий режим: власна історія — без вибору, одразу редірект на
-// readingHistory/participant/[participantId] (одне й те саме дитя).
-// Батьківський режим: спочатку список дітей, по натисканню — історія
-// саме цієї дитини (той самий екран participant/[participantId]).
+// Учень: власна історія — без вибору, одразу редірект на
+// readingHistory/participant/[participantId].
+// Вчитель: спочатку список учнів його класів, по натисканню — історія
+// саме цього учня (той самий екран participant/[participantId]).
 const ReadingHistory = () => {
     const router = useRouter();
-    const {childId, isChildMode, isParentMode} = useUserMode();
+    const {studentId, isStudent, isTeacher} = useRole();
 
     const onCancel = useCallback(() => {
         router.back();
@@ -32,17 +32,17 @@ const ReadingHistory = () => {
     });
 
     useEffect(() => {
-        if (isChildMode && childId) {
-            router.replace(`/readingHistory/participant/${childId}`);
+        if (isStudent && studentId) {
+            router.replace(`/readingHistory/participant/${studentId}`);
         }
-    }, [childId, isChildMode, router]);
+    }, [studentId, isStudent, router]);
 
     const fetchAllParticipantApi = useApi(
-        participantApi.fetchAllParticipants,
+        participantApi.fetchStudents,
         {
             errorHandler: {
                 title: i18n.t("error"),
-                message: `${i18n.t("failed_to_fetch_children")}\n${i18n.t("please_try_again_later")}`,
+                message: `${i18n.t("failed_to_fetch_students")}\n${i18n.t("please_try_again_later")}`,
                 options: {tryAgain: true, cancel: true},
             },
         },
@@ -54,13 +54,13 @@ const ReadingHistory = () => {
     }, []);
 
     useEffect(() => {
-        if (isParentMode) {
+        if (isTeacher) {
             invokeFetchParticipants();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isParentMode]);
+    }, [isTeacher]);
 
-    if (isChildMode) {
+    if (isStudent) {
         return (
             <>
                 <CustomStackScreen/>
@@ -97,12 +97,12 @@ const ReadingHistory = () => {
                         {i18n.t("reading_history_title")}
                     </CustomText>
                     <CustomText size="p1Regular" color="$gray-40" paddingTop={4}>
-                        {i18n.t("reading_history_select_child")}
+                        {i18n.t("reading_history_select_student")}
                     </CustomText>
                     {participants.length === 0 && !fetchAllParticipantApi.loading && (
                         <YStack flex={1} justifyContent="center" alignItems="center">
                             <CustomText size="p1Regular" color="$gray-40">
-                                {i18n.t("reading_history_no_children")}
+                                {i18n.t("no_students_yet")}
                             </CustomText>
                         </YStack>
                     )}

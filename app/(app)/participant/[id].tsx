@@ -10,28 +10,23 @@ import Header from "@/components/Header";
 import HeaderButton from "@/components/buttons/HeaderButton";
 import {CustomText} from "@/components/CustomText";
 import useApi from "@/hooks/useApi";
-import BottomButtonGroup from "@/components/buttons/BottomButtonGroup";
-import PrimaryButton from "@/components/buttons/PrimaryButton";
-import {useUserMode} from "@/hooks/userModeContext";
+import {useRole} from "@/hooks/roleContext";
 import participantApi from "@/api/endpoints/participantApi";
 import {Participant} from "@/types/Paticipant";
 import testApi from "@/api/endpoints/testApi";
 import {Test} from "@/types/Test";
 import TestButton from "@/components/buttons/TestButton";
-import CreateTestModal from "@/components/modal/create-test-modal";
 import {useAppSelector} from "@/store";
 import {getAvatarColor, getInitial} from "@/constants/avatarPalette";
 
 const ParticipantDetails = () => {
-    const {isParentMode} = useUserMode();
+    const {isTeacher} = useRole();
     const {id} = useLocalSearchParams();
     const router = useRouter();
     const {testBook} = useAppSelector((state) => state.book)
 
     const [participant, setParticipant] = useState<Participant | undefined>(undefined);
     const [tests, setTests] = useState<Test[]>([])
-
-    const [isCreateTestModalOpen, setIsCreateTestModalOpen] = useState(false)
 
     const onCancel = useCallback(() => {
         router.back();
@@ -50,7 +45,7 @@ const ParticipantDetails = () => {
             },
             errorHandler: {
                 title: i18n.t("error"),
-                message: `${i18n.t("failed_to_fetch_child")}\n${i18n.t("please_try_again_later")}`,
+                message: `${i18n.t("failed_to_fetch_student")}\n${i18n.t("please_try_again_later")}`,
                 options: {
                     tryAgain: true,
                     cancel: true,
@@ -205,12 +200,12 @@ const ParticipantDetails = () => {
                                 {participant.name}
                             </CustomText>
                             <CustomText size="p2Regular" color="$gray-40" textAlign="center">
-                                {i18n.t("student_account_profile") || "Reading profile"}
+                                {participant.classroomName ?? i18n.t("student_account_profile")}
                             </CustomText>
                         </YStack>
                     </YStack>
 
-                    {isParentMode && (
+                    {isTeacher && (
                         <YStack gap={12} flex={1}>
                             <CustomText size="h5Medium" color="$gray-20" paddingLeft={4}>
                                 {i18n.t("tests") || "Assigned Reading Assessments"}
@@ -228,21 +223,6 @@ const ParticipantDetails = () => {
                     )}
                 </YStack>
             </YStack>
-
-            <BottomButtonGroup>
-                <PrimaryButton
-                    onPress={() => setIsCreateTestModalOpen(true)}
-                    text={i18n.t("assign_test")}
-                />
-            </BottomButtonGroup>
-
-            <CreateTestModal
-                onClose={() => setIsCreateTestModalOpen(false)}
-                isOpen={isCreateTestModalOpen}
-                onSave={invokeFetchTestsByParticipantIdAndBookIdApi}
-                participantId={participant.id}
-                participantName={participant.name}
-            />
         </>
     )
 };

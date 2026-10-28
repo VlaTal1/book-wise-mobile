@@ -17,9 +17,11 @@ type Props = {
     isOpen: boolean;
     onSelectId?: (bookId: string) => void;
     onSelectBook?: (book: Book) => void;
+    // Якщо передано — показуємо лише ці книги (напр. книги класу) замість усіх книг вчителя.
+    books?: Book[];
 }
 
-const BookSelectModal: FC<Props> = ({onClose, isOpen, onSelectId, onSelectBook}) => {
+const BookSelectModal: FC<Props> = ({onClose, isOpen, onSelectId, onSelectBook, books: providedBooks}) => {
     const {keyboardVisible, availableContentHeight} = useWindow()
 
     const [books, setBooks] = useState<Book[]>([]);
@@ -49,7 +51,7 @@ const BookSelectModal: FC<Props> = ({onClose, isOpen, onSelectId, onSelectBook})
     }, []);
 
     useEffect(() => {
-        if (isOpen) {
+        if (isOpen && !providedBooks) {
             invokeFetchBooks()
         }
     }, [isOpen]);
@@ -88,7 +90,7 @@ const BookSelectModal: FC<Props> = ({onClose, isOpen, onSelectId, onSelectBook})
             {fetchBooksApi.loading || !books ? (
                 <ActivityIndicator size="small" color="#CB5A2E"/>
             ) : (
-                books.map((book) => (
+                (providedBooks ?? books).map((book) => (
                     <ListButton
                         key={book.id}
                         onPress={() => handleSelect(book)}

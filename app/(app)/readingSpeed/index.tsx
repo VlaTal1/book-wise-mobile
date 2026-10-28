@@ -12,7 +12,7 @@ import {CustomText} from "@/components/CustomText";
 import {ComprehensionQuiz} from "@/components/readingSpeed/ComprehensionQuiz";
 import {HighlightedWordText} from "@/components/readingSpeed/HighlightedWordText";
 import i18n from "@/localization/i18n";
-import {useUserMode} from "@/hooks/userModeContext";
+import {useRole} from "@/hooks/roleContext";
 import {requestMicrophonePermission, startAudioStream, stopAudioStream} from "@/services/audioStreamRecorder";
 import {ReadingSpeedSocket} from "@/services/readingSpeedSocket";
 import readingSpeedAttemptApi from "@/api/endpoints/readingSpeedAttemptApi";
@@ -33,7 +33,7 @@ type Phase = "idle" | "connecting" | "reading" | "finished";
 
 const ReadingSpeed = () => {
     const router = useRouter();
-    const {childId} = useUserMode();
+    const {studentId} = useRole();
 
     const [phase, setPhase] = useState<Phase>("idle");
     const [referenceWords, setReferenceWords] = useState<ReferenceWord[]>([]);
@@ -139,7 +139,7 @@ const ReadingSpeed = () => {
     });
 
     const handleStart = async () => {
-        if (!childId) {
+        if (!studentId) {
             return;
         }
 
@@ -167,7 +167,7 @@ const ReadingSpeed = () => {
         socketRef.current = socket;
 
         try {
-            const reference = await socket.connect(childId, undefined, {
+            const reference = await socket.connect(studentId, undefined, {
                 onWordEvent: (event) => {
                     if (event.tentative) {
                         setTentativeStatuses((prev) => ({...prev, [event.index]: event.status}));
@@ -245,9 +245,9 @@ const ReadingSpeed = () => {
                         {i18n.t("reading_speed_title")}
                     </CustomText>
 
-                    {!childId && (
+                    {!studentId && (
                         <CustomText size="p1Regular" color="$gray-40">
-                            {i18n.t("reading_speed_select_child")}
+                            {i18n.t("reading_speed_students_only")}
                         </CustomText>
                     )}
 
@@ -257,7 +257,7 @@ const ReadingSpeed = () => {
                         </CustomText>
                     )}
 
-                    {phase === "idle" && childId && (
+                    {phase === "idle" && studentId && (
                         <YStack flex={1} justifyContent="center" alignItems="center" gap={16}>
                             <CustomText size="p1Regular" color="$gray-40" textAlign="center">
                                 {i18n.t("reading_speed_description")}

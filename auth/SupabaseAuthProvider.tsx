@@ -356,21 +356,24 @@ export const SupabaseAuthProvider = ({children}: Props) => {
                 hasSession: !!data.session,
             });
 
-            // Retrieve the created profile and set the state
-            if (data.user) {
+            // Підтвердження пошти в Supabase вимкнене — сесія приходить одразу,
+            // ставимо її до завантаження профілю, щоб користувача відразу пустило в застосунок.
+            if (data.user && data.session) {
+                setSession(data.session);
+                setUser(data.user);
+                logEvent("Session and user set immediately after sign up");
+
                 const userProfile = await fetchProfile(data.user.id);
                 if (userProfile) {
-                    logEvent("Retrieved newly created profile");
                     setProfile(userProfile);
-                } else {
-                    logEvent("Failed to retrieve newly created profile");
                 }
-
-                // Make sure to set the session and user if available
-                if (data.session) {
-                    setSession(data.session);
-                    setUser(data.user);
-                    logEvent("Session and user set immediately after sign up");
+            } else if (data.user) {
+                // Сесії немає (напр. підтвердження пошти знову ввімкнули) — пробуємо
+                // одразу увійти тими ж даними.
+                logEvent("No session after sign up, signing in");
+                const {error: signInError} = await signIn(email, password);
+                if (signInError) {
+                    return {error: signInError, user: data.user};
                 }
             }
 

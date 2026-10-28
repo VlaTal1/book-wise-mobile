@@ -11,6 +11,7 @@ import {useAuth} from "@/auth/SupabaseAuthProvider";
 import Input from "@/components/input";
 import GoogleIcon from "@/assets/images/icons/google-icon.svg";
 import {isBlank, isValidEmail, isValidPassword} from "@/functions";
+import KeyboardAwareContainer from "@/components/KeyboardAwareContainer";
 
 // Define the different steps/screens in the password reset flow
 enum PasswordResetStep {
@@ -85,7 +86,7 @@ const Login = () => {
     const onLogin = async () => {
         if (showLoginForm) {
             if (!email || !password) {
-                Alert.alert("Error", "Please enter email and password");
+                Alert.alert(i18n.t("error"), i18n.t("error_login_validation"));
                 return;
             }
 
@@ -93,11 +94,11 @@ const Login = () => {
             try {
                 const {error} = await signIn(email, password);
                 if (error) {
-                    Alert.alert("Login error");
+                    Alert.alert(i18n.t("error_login_title"), i18n.t("error_login_invalid_credentials"));
                 }
             } catch (e) {
                 console.error(e);
-                Alert.alert("Error", "Could not log in");
+                Alert.alert(i18n.t("error"), i18n.t("error_login_failed"));
             } finally {
                 setLocalLoading(false);
             }
@@ -108,32 +109,32 @@ const Login = () => {
 
     const onSignUp = async () => {
         if (!email || !password) {
-            Alert.alert("Error", "Please enter email and password");
+            Alert.alert(i18n.t("error"), i18n.t("error_login_validation"));
             return;
         }
 
         if (!isValidEmail(email)) {
-            Alert.alert("Error", "Please enter a valid email address, e.g. johndoe@example.com");
+            Alert.alert(i18n.t("error"), i18n.t("error_login_validation_email"));
             return;
         }
 
         if (password.length < 6) {
-            Alert.alert("Error", "Password must be at least 6 characters long");
+            Alert.alert(i18n.t("error"), i18n.t("error_login_validation_password"));
             return;
         }
 
         setLocalLoading(true);
         try {
-            const {error, user} = await signUp(email, password);
+            // Після успішної реєстрації користувач одразу авторизований —
+            // layout сам перекине на вибір ролі.
+            const {error} = await signUp(email, password);
 
             if (error) {
-                Alert.alert("Sign up error");
-            } else if (user) {
-                Alert.alert("Success!", "Account is created!");
+                Alert.alert(i18n.t("error_signup_title"), error.message);
             }
         } catch (e) {
             console.error(e);
-            Alert.alert("Error", "Could not sign up");
+            Alert.alert(i18n.t("error"), i18n.t("error_signup_failed"));
         } finally {
             setLocalLoading(false);
         }
@@ -152,7 +153,7 @@ const Login = () => {
         // } finally {
         //     setGoogleLoading(false);
         // }
-        Alert.alert("Not implemented yet")
+        Alert.alert(i18n.t("not_implemented"))
     };
 
     // Start forgot password flow
@@ -164,12 +165,12 @@ const Login = () => {
     // Send password reset email with code
     const onRequestPasswordReset = async () => {
         if (!resetEmail) {
-            Alert.alert("Error", "Please enter your email address");
+            Alert.alert(i18n.t("error"), i18n.t("error_reset_email_required"));
             return;
         }
 
         if (!isValidEmail(resetEmail)) {
-            Alert.alert("Error", "Please enter a valid email address");
+            Alert.alert(i18n.t("error"), i18n.t("error_reset_email_invalid"));
             return;
         }
 
@@ -177,18 +178,18 @@ const Login = () => {
         try {
             const {error} = await resetPassword(resetEmail);
             if (error) {
-                Alert.alert("Password Reset Error");
+                Alert.alert(i18n.t("error_reset_pass_title"));
             } else {
                 Alert.alert(
-                    "Password Reset Email Sent",
-                    "Check your email for a 6-digit code to reset your password.",
-                    [{text: "OK"}],
+                    i18n.t("request_reset_success_title"),
+                    i18n.t("request_reset_success_description"),
+                    [{text: i18n.t("ok")}],
                 );
                 setResetStep(PasswordResetStep.VERIFY_CODE);
             }
         } catch (e) {
             console.error(e);
-            Alert.alert("Error", "Could not send password reset email");
+            Alert.alert(i18n.t("error"), i18n.t("error_reset_send_failed"));
         } finally {
             setLocalLoading(false);
         }
@@ -197,7 +198,7 @@ const Login = () => {
     // Verify the reset code
     const onVerifyResetCode = async () => {
         if (!resetCode || resetCode.length < 6) {
-            Alert.alert("Error", "Please enter the 6-digit code from your email");
+            Alert.alert(i18n.t("error"), i18n.t("error_reset_pass_code_invalid_description"));
             return;
         }
 
@@ -205,15 +206,15 @@ const Login = () => {
         try {
             const {error, session} = await verifyPasswordResetCode(resetEmail, resetCode);
             if (error) {
-                Alert.alert("Verification Error");
+                Alert.alert(i18n.t("error_verification_title"));
             } else if (session) {
                 setResetStep(PasswordResetStep.NEW_PASSWORD);
             } else {
-                Alert.alert("Error", "Verification failed. Please try again.");
+                Alert.alert(i18n.t("error"), i18n.t("error_reset_code_verification_description"));
             }
         } catch (e) {
             console.error(e);
-            Alert.alert("Error", "Could not verify reset code");
+            Alert.alert(i18n.t("error"), i18n.t("error_reset_verify_failed"));
         } finally {
             setLocalLoading(false);
         }
@@ -222,17 +223,17 @@ const Login = () => {
     // Set new password
     const onSetNewPassword = async () => {
         if (!newPassword) {
-            Alert.alert("Error", "Please enter a new password");
+            Alert.alert(i18n.t("error"), i18n.t("error_reset_pass_new_pass_not_present"));
             return;
         }
 
         if (newPassword.length < 6) {
-            Alert.alert("Error", "Password must be at least 6 characters long");
+            Alert.alert(i18n.t("error"), i18n.t("error_reset_pass_new_pass_invalid"));
             return;
         }
 
         if (newPassword !== confirmPassword) {
-            Alert.alert("Error", "Passwords do not match");
+            Alert.alert(i18n.t("error"), i18n.t("error_reset_pass_new_pass_unmatch"));
             return;
         }
 
@@ -240,14 +241,14 @@ const Login = () => {
         try {
             const {error} = await updatePassword(newPassword);
             if (error) {
-                Alert.alert("Password Update Error");
+                Alert.alert(i18n.t("error_password_update_title"));
             } else {
                 Alert.alert(
-                    "Password Updated",
-                    "Your password has been successfully updated. You can now log in with your new password.",
+                    i18n.t("new_password_success_title"),
+                    i18n.t("new_password_success_description"),
                     [
                         {
-                            text: "OK",
+                            text: i18n.t("ok"),
                             onPress: () => {
                                 // Reset the state and return to login
                                 setResetStep(PasswordResetStep.NONE);
@@ -266,7 +267,7 @@ const Login = () => {
             }
         } catch (e) {
             console.error(e);
-            Alert.alert("Error", "Could not update password");
+            Alert.alert(i18n.t("error"), i18n.t("error_password_update_failed"));
         } finally {
             setLocalLoading(false);
         }
@@ -297,27 +298,26 @@ const Login = () => {
 
         switch (resetStep) {
             case PasswordResetStep.REQUEST_RESET:
-                title = i18n.t("forgot_password") || "Forgot Password";
-                description = i18n.t("forgot_password_instructions") ||
-                    "Enter your email address and we'll send you a code to reset your password.";
+                title = i18n.t("forgot_password");
+                description = i18n.t("forgot_password_instructions");
                 content = (
                     <YStack gap={8}>
                         <Input
                             id="forgot_password_email"
-                            placeholder={i18n.t("login_email") || "Email"}
+                            placeholder={i18n.t("login_email")}
                             value={resetEmail}
                             setValue={setResetEmail}
                             autoCapitalize="none"
                             keyboardType="email-address"
                             errorMessage={(isBlank(resetEmail) || isValidEmail(resetEmail)) ? "" :
-                                i18n.t("edit_email_validation") || "Please enter a valid email"}
+                                i18n.t("edit_email_validation")}
                         />
                         <PrimaryButton
-                            text={i18n.t("send_reset_code") || "Send Reset Code"}
+                            text={i18n.t("send_reset_code")}
                             onPress={onRequestPasswordReset}
                         />
                         <SecondaryButton
-                            text={i18n.t("cancel") || "Cancel"}
+                            text={i18n.t("cancel")}
                             onPress={onCancelReset}
                         />
                     </YStack>
@@ -325,25 +325,24 @@ const Login = () => {
                 break;
 
             case PasswordResetStep.VERIFY_CODE:
-                title = i18n.t("verify_code") || "Verify Code";
-                description = i18n.t("verify_code_instructions") ||
-                    "Enter the 6-digit code we sent to your email address.";
+                title = i18n.t("verify_code");
+                description = i18n.t("verify_code_instructions");
                 content = (
                     <YStack gap={8}>
                         <Input
                             id="reset_code"
-                            placeholder={i18n.t("verification_code") || "6-digit code"}
+                            placeholder={i18n.t("verification_code")}
                             value={resetCode}
                             setValue={setResetCode}
                             keyboardType="number-pad"
                             maxLength={6}
                         />
                         <PrimaryButton
-                            text={i18n.t("verify_code") || "Verify Code"}
+                            text={i18n.t("verify_code")}
                             onPress={onVerifyResetCode}
                         />
                         <SecondaryButton
-                            text={i18n.t("cancel") || "Cancel"}
+                            text={i18n.t("cancel")}
                             onPress={onCancelReset}
                         />
                     </YStack>
@@ -351,37 +350,36 @@ const Login = () => {
                 break;
 
             case PasswordResetStep.NEW_PASSWORD:
-                title = i18n.t("new_password") || "New Password";
-                description = i18n.t("new_password_instructions") ||
-                    "Create a new password for your account.";
+                title = i18n.t("new_password");
+                description = i18n.t("new_password_instructions");
                 content = (
                     <YStack gap={8}>
                         <Input
                             id="new_password"
-                            placeholder={i18n.t("new_password") || "New Password"}
+                            placeholder={i18n.t("new_password")}
                             value={newPassword}
                             setValue={setNewPassword}
                             secureTextEntry={true}
                             errorMessage={(isBlank(newPassword) || isValidPassword(newPassword)) ? "" :
-                                i18n.t("validation_error_password") || "Password must be at least 6 characters"}
+                                i18n.t("validation_error_password")}
                         />
                         <Input
                             id="confirm_password"
-                            placeholder={i18n.t("confirm_password") || "Confirm Password"}
+                            placeholder={i18n.t("confirm_password")}
                             value={confirmPassword}
                             setValue={setConfirmPassword}
                             secureTextEntry={true}
                             errorMessage={
                                 (isBlank(confirmPassword) || newPassword === confirmPassword) ? "" :
-                                    i18n.t("passwords_dont_match") || "Passwords don't match"
+                                    i18n.t("passwords_dont_match")
                             }
                         />
                         <PrimaryButton
-                            text={i18n.t("update_password") || "Update Password"}
+                            text={i18n.t("update_password")}
                             onPress={onSetNewPassword}
                         />
                         <SecondaryButton
-                            text={i18n.t("cancel") || "Cancel"}
+                            text={i18n.t("cancel")}
                             onPress={onCancelReset}
                         />
                     </YStack>
@@ -390,25 +388,73 @@ const Login = () => {
         }
 
         return (
+            <KeyboardAwareContainer>
+                <YStack
+                    flex={1}
+                    justifyContent="space-between"
+                    alignItems="center"
+                    gap={16}
+                >
+                    <CustomStackScreen/>
+                    <YStack alignItems="center" justifyContent="center" flexGrow={1}>
+                        <View gap={16} alignItems="center">
+                            <YStack gap={12} alignItems="center">
+                                <View gap={8} alignItems="center">
+                                    <CustomText size="h1" color="$gray-20">
+                                        {title}
+                                    </CustomText>
+                                </View>
+                                <CustomText size="p1Light" color="$gray-40" textAlign="center">
+                                    {description}
+                                </CustomText>
+                            </YStack>
+                        </View>
+                    </YStack>
+
+                    <YStack
+                        backgroundColor="white"
+                        paddingHorizontal={24}
+                        borderTopLeftRadius={32}
+                        borderTopRightRadius={32}
+                        width="100%"
+                        paddingBottom={24}
+                    >
+                        <XStack marginVertical={24} justifyContent="center">
+                            <CustomText size="h4Regular" textAlign="center">
+                                {title}
+                            </CustomText>
+                        </XStack>
+
+                        <YStack gap={16}>
+                            {content}
+                        </YStack>
+                    </YStack>
+                </YStack>
+            </KeyboardAwareContainer>
+        );
+    }
+
+    // Regular login screen
+    return (
+        <KeyboardAwareContainer>
             <YStack
                 flex={1}
-                height="100%"
                 justifyContent="space-between"
                 alignItems="center"
-                gap={16}
+                gap={showLoginForm ? 16 : 0}
             >
                 <CustomStackScreen/>
                 <YStack alignItems="center" justifyContent="center" flexGrow={1}>
                     <View gap={16} alignItems="center">
                         <YStack gap={12} alignItems="center">
                             <View gap={8} alignItems="center">
+                                <CustomText size="p1Light" color="$gray-40">
+                                    {i18n.t("welcome_to")}
+                                </CustomText>
                                 <CustomText size="h1" color="$gray-20">
-                                    {title}
+                                    {i18n.t("app_name")}
                                 </CustomText>
                             </View>
-                            <CustomText size="p1Light" color="$gray-40" textAlign="center">
-                                {description}
-                            </CustomText>
                         </YStack>
                     </View>
                 </YStack>
@@ -423,100 +469,54 @@ const Login = () => {
                 >
                     <XStack marginVertical={24} justifyContent="center">
                         <CustomText size="h4Regular" textAlign="center">
-                            {title}
+                            {showLoginForm ? i18n.t("enter_credentials") : i18n.t("please_login")}
                         </CustomText>
                     </XStack>
 
-                    <YStack gap={16}>
-                        {content}
-                    </YStack>
+                    {showLoginForm ? (
+                        <YStack gap={16}>
+                            <YStack gap={8}>
+                                <Input
+                                    id="login_email"
+                                    placeholder={i18n.t("login_email")}
+                                    value={email}
+                                    setValue={setEmail}
+                                    autoCapitalize="none"
+                                    keyboardType="email-address"
+                                    errorMessage={(isBlank(email) || isValidEmail(email)) ? "" : i18n.t("edit_email_validation")}
+                                />
+                                <Input
+                                    id="login_password"
+                                    placeholder={i18n.t("login_password")}
+                                    value={password}
+                                    setValue={setPassword}
+                                    secureTextEntry={true}
+                                    errorMessage={(isBlank(password) || isValidPassword(password)) ? "" : i18n.t("validation_error_password")}
+                                />
+
+                                <XStack justifyContent="flex-end" paddingVertical={4}>
+                                    <CustomText
+                                        size="p2Regular"
+                                        color="$primary"
+                                        textDecorationLine="underline"
+                                        onPress={onForgotPassword}
+                                    >
+                                        {i18n.t("forgot_password")}
+                                    </CustomText>
+                                </XStack>
+
+                                <PrimaryButton text={i18n.t("login")} onPress={onLogin}/>
+                                <SecondaryButton text={i18n.t("sign_up")} onPress={onSignUp}/>
+                            </YStack>
+                        </YStack>
+                    ) : (
+                        <YStack gap={16}>
+                            <PrimaryButton text={i18n.t("login_via_email")} onPress={onLogin}/>
+                        </YStack>
+                    )}
                 </YStack>
             </YStack>
-        );
-    }
-
-    // Regular login screen
-    return (
-        <YStack
-            flex={1}
-            height="100%"
-            justifyContent="space-between"
-            alignItems="center"
-            gap={showLoginForm ? 16 : 0}
-        >
-            <CustomStackScreen/>
-            <YStack alignItems="center" justifyContent="center" flexGrow={1}>
-                <View gap={16} alignItems="center">
-                    <YStack gap={12} alignItems="center">
-                        <View gap={8} alignItems="center">
-                            <CustomText size="p1Light" color="$gray-40">
-                                {i18n.t("welcome_to")}
-                            </CustomText>
-                            <CustomText size="h1" color="$gray-20">
-                                {i18n.t("app_name")}
-                            </CustomText>
-                        </View>
-                    </YStack>
-                </View>
-            </YStack>
-
-            <YStack
-                backgroundColor="white"
-                paddingHorizontal={24}
-                borderTopLeftRadius={32}
-                borderTopRightRadius={32}
-                width="100%"
-                paddingBottom={24}
-            >
-                <XStack marginVertical={24} justifyContent="center">
-                    <CustomText size="h4Regular" textAlign="center">
-                        {showLoginForm ? i18n.t("enter_credentials") : i18n.t("please_login")}
-                    </CustomText>
-                </XStack>
-
-                {showLoginForm ? (
-                    <YStack gap={16}>
-                        <YStack gap={8}>
-                            <Input
-                                id="login_email"
-                                placeholder={i18n.t("login_email")}
-                                value={email}
-                                setValue={setEmail}
-                                autoCapitalize="none"
-                                keyboardType="email-address"
-                                errorMessage={(isBlank(email) || isValidEmail(email)) ? "" : i18n.t("edit_email_validation")}
-                            />
-                            <Input
-                                id="login_password"
-                                placeholder={i18n.t("login_password")}
-                                value={password}
-                                setValue={setPassword}
-                                secureTextEntry={true}
-                                errorMessage={(isBlank(password) || isValidPassword(password)) ? "" : i18n.t("validation_error_password")}
-                            />
-
-                            <XStack justifyContent="flex-end" paddingVertical={4}>
-                                <CustomText
-                                    size="p2Regular"
-                                    color="$primary"
-                                    textDecorationLine="underline"
-                                    onPress={onForgotPassword}
-                                >
-                                    {i18n.t("forgot_password") || "Forgot Password?"}
-                                </CustomText>
-                            </XStack>
-
-                            <PrimaryButton text={i18n.t("login")} onPress={onLogin}/>
-                            <SecondaryButton text={i18n.t("sign_up")} onPress={onSignUp}/>
-                        </YStack>
-                    </YStack>
-                ) : (
-                    <YStack gap={16}>
-                        <PrimaryButton text={i18n.t("login_via_email")} onPress={onLogin}/>
-                    </YStack>
-                )}
-            </YStack>
-        </YStack>
+        </KeyboardAwareContainer>
     );
 };
 

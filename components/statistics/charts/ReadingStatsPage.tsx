@@ -88,7 +88,7 @@ const ReadingStatsPage: React.FC<Props> = ({data}) => {
 
     const renderParticipantSelector = () => (
         <View style={styles.selectorContainer}>
-            <Text style={styles.selectorTitle}>{i18n.t("select_child")}</Text>
+            <Text style={styles.selectorTitle}>{i18n.t("select_student")}</Text>
             <View style={styles.participantButtons}>
                 {data.map((item) => (
                     <TouchableOpacity
@@ -121,7 +121,7 @@ const ReadingStatsPage: React.FC<Props> = ({data}) => {
         color: string,
     ) => {
         if (data.length === 0) {
-            return <Text style={styles.noDataText}>No data</Text>;
+            return <Text style={styles.noDataText}>{i18n.t("no_data")}</Text>;
         }
 
         const maxValue = Math.max(...data.map((item) => item.value));

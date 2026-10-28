@@ -1,22 +1,30 @@
 import apiRequest, {ApiResponse} from "@/api";
-import {Participant} from "@/types/Paticipant";
+import {Participant, UserRole} from "@/types/Paticipant";
 
 const participantApi = {
-    saveParticipant: async ({participant}: {
-        participant: Participant;
+    // 404 — користувач ще не обрав роль після реєстрації.
+    fetchMe: async (): Promise<ApiResponse<Participant>> => {
+        return apiRequest<Participant>({
+            path: "/api/participant/me",
+        });
+    },
+    createMe: async ({name, role}: {
+        name: string;
+        role: UserRole;
     }): Promise<ApiResponse<Participant>> => {
         return apiRequest<Participant>({
-            path: "/api/participant",
+            path: "/api/participant/me",
             method: "POST",
-            body: participant,
+            body: {name, role},
             headers: {
                 "Accept": "application/json",
             },
         });
     },
-    fetchAllParticipants: async (): Promise<ApiResponse<Participant[]>> => {
+    // Вчитель — усі учні його класів, учень — лише він сам.
+    fetchStudents: async (): Promise<ApiResponse<Participant[]>> => {
         return apiRequest<Participant[]>({
-            path: "/api/participant/all",
+            path: "/api/participant/students",
         });
     },
     fetchParticipantById: async (participantId: string): Promise<ApiResponse<Participant>> => {
