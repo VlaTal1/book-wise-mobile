@@ -138,6 +138,14 @@ export interface ReadingSpeedAttempt {
     // вдалося (services/reading_speed_session.py, Python); якщо null, плеєр
     // в історії не показуємо.
     audioFileName: string | null;
+    // Норма темпу класу на момент спроби.
+    targetWpm: number | null;
+    // Тест на розуміння: кількість питань (0 — тесту не було) і правильних
+    // відповідей (null — учень ще не надіслав результат).
+    quizTotal: number | null;
+    quizCorrect: number | null;
+    // Оцінка 1-10 — лише остаточна (після перевірки наголосу й тесту), до того null.
+    grade: number | null;
     createdAt: string;
     updatedAt: string;
 }

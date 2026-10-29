@@ -3,13 +3,31 @@ import {Classroom, ClassroomDetails, ClassroomTestRequest} from "@/types/Classro
 import {Test} from "@/types/Test";
 
 const classroomApi = {
-    createClassroom: async ({name}: {
+    // classroomId ігнорується — лише щоб сигнатура збігалася з updateClassroom
+    // (одна форма для створення й редагування).
+    createClassroom: async ({name, targetWpm}: {
+        classroomId?: string;
         name: string;
+        targetWpm: number;
     }): Promise<ApiResponse<Classroom>> => {
         return apiRequest<Classroom>({
             path: "/api/classrooms",
             method: "POST",
-            body: {name},
+            body: {name, targetWpm},
+            headers: {
+                "Accept": "application/json",
+            },
+        });
+    },
+    updateClassroom: async ({classroomId, name, targetWpm}: {
+        classroomId?: string;
+        name: string;
+        targetWpm: number;
+    }): Promise<ApiResponse<Classroom>> => {
+        return apiRequest<ClassroomDetails>({
+            path: `/api/classrooms/${classroomId}`,
+            method: "PUT",
+            body: {name, targetWpm},
             headers: {
                 "Accept": "application/json",
             },

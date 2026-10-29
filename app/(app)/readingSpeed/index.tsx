@@ -71,6 +71,9 @@ const ReadingSpeed = () => {
     const [stressStatus, setStressStatus] = useState<StressStatus | null>(null);
     const [stressProgress, setStressProgress] = useState<number | null>(null);
     const [stressAccuracy, setStressAccuracy] = useState<number | null>(null);
+    // Остаточна оцінка 1-10 рахується в Java, коли готові і наголос, і тест.
+    const [grade, setGrade] = useState<number | null>(null);
+    const [quizSubmitted, setQuizSubmitted] = useState(false);
 
     const [secondsLeft, setSecondsLeft] = useState(READING_TIME_LIMIT_SECONDS);
 
@@ -122,6 +125,7 @@ const ReadingSpeed = () => {
             setStressStatus(response.data.stressStatus);
             setStressProgress(response.data.stressProgress);
             setStressAccuracy(response.data.stressAccuracy);
+            setGrade(response.data.grade);
             if (STRESS_TERMINAL_STATUSES.includes(response.data.stressStatus)) {
                 stopStressPolling();
             }
@@ -175,6 +179,8 @@ const ReadingSpeed = () => {
         setStressStatus(null);
         setStressProgress(null);
         setStressAccuracy(null);
+        setGrade(null);
+        setQuizSubmitted(false);
         stopStressPolling();
         stopReadingTimer();
         setPhase("connecting");
@@ -262,6 +268,26 @@ const ReadingSpeed = () => {
             setPhase("idle");
         }
     };
+
+    // Результат тесту відправляємо, щойно відомі і бал, і attemptId (вони
+    // приходять у довільному порядку) — без нього Java не виставить оцінку.
+    useEffect(() => {
+        if (attemptId === null || quizScore === null || quizSubmitted) {
+            return;
+        }
+        setQuizSubmitted(true);
+        readingSpeedAttemptApi.submitQuizResult({id: attemptId, correct: quizScore}).then((response) => {
+            if (response.success && response.data.grade !== null) {
+                setGrade(response.data.grade);
+            }
+        });
+    }, [attemptId, quizScore, quizSubmitted]);
+
+    // Оцінку ще чекаємо, поки не завершилась перевірка наголосу або не
+    // відправлено результат тесту (якщо тест був).
+    const quizPending = (quiz?.length ?? 0) > 0 && !quizSubmitted;
+    const stressPending = stressStatus === null || !STRESS_TERMINAL_STATUSES.includes(stressStatus);
+    const gradePending = grade === null && attemptId !== null && (quizPending || stressPending);
 
     // Після тесту — результати, якщо вони вже прийшли; інакше чекаємо їх на
     // екрані обробки (або повідомляємо про помилку, якщо сокет уже закрито).
@@ -424,6 +450,29 @@ const ReadingSpeed = () => {
                                     shadowOpacity: 1,
                                 }}
                             >
+                                <XStack
+                                    justifyContent="space-between"
+                                    alignItems="center"
+                                    paddingBottom={12}
+                                    borderBottomWidth={1}
+                                    borderColor="$gray-85"
+                                >
+                                    <CustomText size="h5Medium" color="$gray-20">
+                                        {i18n.t("reading_speed_grade")}
+                                    </CustomText>
+                                    {gradePending ? (
+                                        <XStack alignItems="center" gap={8}>
+                                            <ActivityIndicator size="small" color="#CB5A2E"/>
+                                            <CustomText size="p2Regular" color="$gray-40">
+                                                {i18n.t("reading_speed_grade_pending")}
+                                            </CustomText>
+                                        </XStack>
+                                    ) : (
+                                        <CustomText size="h2" color="#CB5A2E">
+                                            {grade !== null ? `${grade}/10` : "—"}
+                                        </CustomText>
+                                    )}
+                                </XStack>
                                 <XStack justifyContent="space-between">
                                     <CustomText size="p1Regular" color="$gray-40">
                                         {i18n.t("reading_speed_wpm")}

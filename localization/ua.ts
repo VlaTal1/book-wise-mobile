@@ -257,6 +257,14 @@ const ua = {
     "delete_test_confirm": "Тест за книгою \"%{bookTitle}\" буде видалено в усіх учнів разом з їхніми відповідями й оцінками. Це не можна скасувати.",
     "failed_to_regenerate_test": "Не вдалося запустити генерацію тесту",
     "failed_to_delete_test": "Не вдалося видалити тест",
+    "reading_speed_grade": "Оцінка",
+    "reading_speed_grade_pending": "Рахуємо…",
+    "edit_classroom": "Редагувати клас",
+    "failed_to_update_classroom": "Не вдалося оновити клас",
+    "classroom_target_wpm": "Норма темпу читання (правильних слів за хвилину)",
+    "classroom_target_wpm_validation": "Введіть число від %{min} до %{max}",
+    "classroom_target_wpm_hint": "Орієнтовні норми читання вголос: 1 клас — 30–40, 2 клас — 50–60, 3 клас — 65–75, 4 клас — 80–90, 5–6 клас — 100–110, 7+ клас — 120.",
+    "classroom_target_wpm_value": "Норма читання: %{wpm} сл/хв",
 };
 
 export default ua;

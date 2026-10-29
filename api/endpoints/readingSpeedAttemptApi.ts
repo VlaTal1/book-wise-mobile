@@ -31,6 +31,22 @@ const readingSpeedAttemptApi = {
         });
     },
 
+    // Результат тесту на розуміння після читання — потрібен для остаточної
+    // оцінки; у відповіді вже може бути grade, якщо наголос перевірено.
+    submitQuizResult: async ({id, correct}: {
+        id: number;
+        correct: number;
+    }): Promise<ApiResponse<ReadingSpeedAttempt>> => {
+        return apiRequest<ReadingSpeedAttempt>({
+            path: `/api/reading-speed-attempts/${id}/quiz`,
+            method: "POST",
+            body: {correct},
+            headers: {
+                "Accept": "application/json",
+            },
+        });
+    },
+
     deleteAttempt: async (id: number): Promise<ApiResponse<null>> => {
         return apiRequest<null>({
             path: `/api/reading-speed-attempts/${id}`,

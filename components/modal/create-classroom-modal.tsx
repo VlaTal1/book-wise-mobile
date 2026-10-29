@@ -1,4 +1,4 @@
-import React, {FC, useCallback} from "react";
+import React, {FC, useCallback, useEffect} from "react";
 import {ScrollView, XStack, YStack} from "tamagui";
 import {Controller, useForm} from "react-hook-form";
 import {ActivityIndicator} from "react-native";
@@ -13,24 +13,33 @@ import useWindow from "@/hooks/useWindow";
 import LabelledInput from "@/components/LabelledInput";
 import useApi from "@/hooks/useApi";
 import classroomApi from "@/api/endpoints/classroomApi";
+import {CustomText} from "@/components/CustomText";
 import {Classroom} from "@/types/Classroom";
 
 type Props = {
     onClose: () => void;
     isOpen: boolean;
     onSave: (classroom: Classroom) => void;
+    // Якщо передано — редагуємо цей клас замість створення нового.
+    classroom?: Classroom;
 }
 
 type FormValues = {
     name: string;
+    targetWpm: string;
 };
 
-const CreateClassroomModal: FC<Props> = ({onClose, isOpen, onSave}) => {
+const DEFAULT_TARGET_WPM = "70";
+const MIN_TARGET_WPM = 10;
+const MAX_TARGET_WPM = 300;
+
+const CreateClassroomModal: FC<Props> = ({onClose, isOpen, onSave, classroom}) => {
     const {keyboardVisible, availableContentHeight} = useWindow()
 
     const {control, handleSubmit, setValue, watch, reset, formState: {errors, isDirty}} = useForm<FormValues>({
         defaultValues: {
             name: "",
+            targetWpm: DEFAULT_TARGET_WPM,
         },
         mode: "onChange",
     });
@@ -39,9 +48,17 @@ const CreateClassroomModal: FC<Props> = ({onClose, isOpen, onSave}) => {
 
     const handleReset = useCallback(() => {
         reset({
-            name: "",
+            name: classroom?.name ?? "",
+            targetWpm: classroom ? classroom.targetWpm.toString() : DEFAULT_TARGET_WPM,
         });
-    }, [reset]);
+    }, [reset, classroom]);
+
+    // У режимі редагування підставляємо поточні значення класу при відкритті.
+    useEffect(() => {
+        if (isOpen) {
+            handleReset();
+        }
+    }, [isOpen]);
 
     const onCancel = useCallback(() => {
         onClose();
@@ -49,7 +66,7 @@ const CreateClassroomModal: FC<Props> = ({onClose, isOpen, onSave}) => {
     }, [onClose, handleReset]);
 
     const saveApi = useApi(
-        classroomApi.createClassroom,
+        classroom ? classroomApi.updateClassroom : classroomApi.createClassroom,
         {
             onSuccess: (classroom) => {
                 onClose();
@@ -58,7 +75,7 @@ const CreateClassroomModal: FC<Props> = ({onClose, isOpen, onSave}) => {
             },
             errorHandler: {
                 title: i18n.t("error"),
-                message: `${i18n.t("failed_to_create_classroom")}\n${i18n.t("please_try_again_later")}`,
+                message: `${i18n.t(classroom ? "failed_to_update_classroom" : "failed_to_create_classroom")}\n${i18n.t("please_try_again_later")}`,
                 options: {
                     tryAgain: true,
                     cancel: true,
@@ -68,16 +85,22 @@ const CreateClassroomModal: FC<Props> = ({onClose, isOpen, onSave}) => {
     );
 
     const handleSave = useCallback(async (data: FormValues) => {
-        await saveApi.execute({name: data.name.trim()});
-    }, [saveApi]);
+        await saveApi.execute({
+            classroomId: classroom?.id.toString() ?? "",
+            name: data.name.trim(),
+            targetWpm: Number(data.targetWpm),
+        });
+    }, [saveApi, classroom]);
 
-    const isValid = !isBlank(formValues.name)
+    const targetWpm = Number(formValues.targetWpm);
+    const isTargetWpmValid = Number.isInteger(targetWpm) && targetWpm >= MIN_TARGET_WPM && targetWpm <= MAX_TARGET_WPM;
+    const isValid = !isBlank(formValues.name) && isTargetWpmValid
 
     return (
         <Modal
                 isOpen={isOpen}
                 onClose={onCancel}
-                headerText={i18n.t("create_classroom")}
+                headerText={i18n.t(classroom ? "edit_classroom" : "create_classroom")}
                 modalActions={(
                     <XStack gap={6}>
                         <SecondaryButton
@@ -122,6 +145,29 @@ const CreateClassroomModal: FC<Props> = ({onClose, isOpen, onSave}) => {
                                     )}
                                 />
                             </LabelledInput>
+
+                            <LabelledInput label={i18n.t("classroom_target_wpm")} htmlFor="targetWpm">
+                                <Controller
+                                    control={control}
+                                    name="targetWpm"
+                                    render={({field: {onChange, value}}) => (
+                                        <Input
+                                            id="targetWpm"
+                                            value={value}
+                                            setValue={(text) => onChange(text.replace(/[^0-9]/g, ""))}
+                                            keyboardType="number-pad"
+                                            maxLength={3}
+                                            placeholder={DEFAULT_TARGET_WPM}
+                                            errorMessage={formValues.targetWpm !== "" && !isTargetWpmValid
+                                                ? i18n.t("classroom_target_wpm_validation", {min: MIN_TARGET_WPM, max: MAX_TARGET_WPM})
+                                                : undefined}
+                                        />
+                                    )}
+                                />
+                            </LabelledInput>
+                            <CustomText size="p3Regular" color="$gray-40">
+                                {i18n.t("classroom_target_wpm_hint")}
+                            </CustomText>
                         </YStack>
                     </ScrollView>
                 )}

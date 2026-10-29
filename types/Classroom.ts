@@ -8,6 +8,8 @@ export type Classroom = {
     code: string;
     teacherName: string | null;
     studentsCount: number;
+    // Норма темпу читання (правильних слів/хв) — для оцінки читання на швидкість.
+    targetWpm: number;
 }
 
 // Тест класу з точки зору вчителя: стан генерації та скільки учнів пройшли.

@@ -23,6 +23,7 @@ import SecondaryButton from "@/components/buttons/SecondaryButton";
 import BookSelectModal from "@/components/modal/book-select-modal";
 import CreateTestModal from "@/components/modal/create-test-modal";
 import JoinClassroomModal from "@/components/modal/join-classroom-modal";
+import CreateClassroomModal from "@/components/modal/create-classroom-modal";
 import {useRole} from "@/hooks/roleContext";
 
 const ClassroomScreen = () => {
@@ -36,6 +37,7 @@ const ClassroomScreen = () => {
     const [isBookSelectModalOpen, setIsBookSelectModalOpen] = useState(false);
     const [isCreateTestModalOpen, setIsCreateTestModalOpen] = useState(false);
     const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
     const onCancel = useCallback(() => {
         router.back();
@@ -300,6 +302,18 @@ const ClassroomScreen = () => {
                                 )}
                             </YStack>
 
+                            <XStack
+                                alignItems="center"
+                                gap={6}
+                                pressStyle={isTeacher ? {opacity: 0.6} : undefined}
+                                onPress={isTeacher ? () => setIsEditModalOpen(true) : undefined}
+                            >
+                                <CustomText size="p2Regular" color="$gray-40">
+                                    {i18n.t("classroom_target_wpm_value", {wpm: classroom.targetWpm})}
+                                </CustomText>
+                                {isTeacher && <Feather name="edit-2" size={14} color="#A68A63"/>}
+                            </XStack>
+
                             {isTeacher && (
                                 <YStack alignItems="center" gap={6}>
                                     <CustomText size="p3Regular" color="$gray-40">
@@ -421,6 +435,12 @@ const ClassroomScreen = () => {
                         isOpen={isBookSelectModalOpen}
                         onClose={() => setIsBookSelectModalOpen(false)}
                         onSelectBook={handleBookSelect}
+                    />
+                    <CreateClassroomModal
+                        isOpen={isEditModalOpen}
+                        onClose={() => setIsEditModalOpen(false)}
+                        onSave={invokeFetchClassroom}
+                        classroom={classroom}
                     />
                     <CreateTestModal
                         isOpen={isCreateTestModalOpen}

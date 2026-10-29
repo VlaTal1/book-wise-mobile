@@ -257,6 +257,14 @@ const en = {
     "delete_test_confirm": "The test for \"%{bookTitle}\" will be deleted for all students together with their answers and grades. This can't be undone.",
     "failed_to_regenerate_test": "Failed to start test generation",
     "failed_to_delete_test": "Failed to delete test",
+    "reading_speed_grade": "Grade",
+    "reading_speed_grade_pending": "Calculating…",
+    "edit_classroom": "Edit class",
+    "failed_to_update_classroom": "Failed to update class",
+    "classroom_target_wpm": "Reading speed norm (correct words per minute)",
+    "classroom_target_wpm_validation": "Enter a number from %{min} to %{max}",
+    "classroom_target_wpm_hint": "Approximate norms for reading aloud: grade 1 — 30–40, grade 2 — 50–60, grade 3 — 65–75, grade 4 — 80–90, grades 5–6 — 100–110, grade 7+ — 120.",
+    "classroom_target_wpm_value": "Reading norm: %{wpm} words/min",
 };
 
 export default en;
