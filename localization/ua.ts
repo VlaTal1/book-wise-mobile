@@ -265,6 +265,7 @@ const ua = {
     "classroom_target_wpm_validation": "Введіть число від %{min} до %{max}",
     "classroom_target_wpm_hint": "Орієнтовні норми читання вголос: 1 клас — 30–40, 2 клас — 50–60, 3 клас — 65–75, 4 клас — 80–90, 5–6 клас — 100–110, 7+ клас — 120.",
     "classroom_target_wpm_value": "Норма читання: %{wpm} сл/хв",
+    "reading_history_grade_norm": "Оцінено за нормою класу %{wpm} сл/хв",
 };
 
 export default ua;

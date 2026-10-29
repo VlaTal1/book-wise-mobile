@@ -265,6 +265,7 @@ const en = {
     "classroom_target_wpm_validation": "Enter a number from %{min} to %{max}",
     "classroom_target_wpm_hint": "Approximate norms for reading aloud: grade 1 — 30–40, grade 2 — 50–60, grade 3 — 65–75, grade 4 — 80–90, grades 5–6 — 100–110, grade 7+ — 120.",
     "classroom_target_wpm_value": "Reading norm: %{wpm} words/min",
+    "reading_history_grade_norm": "Graded against the class norm of %{wpm} words/min",
 };
 
 export default en;

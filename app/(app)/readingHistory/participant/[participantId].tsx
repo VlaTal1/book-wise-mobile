@@ -57,8 +57,22 @@ const ReadingHistoryRow = ({attempt, onPress, onDelete}: {
                 <CustomText size="p2Medium" color="$gray-20">
                     {formatDate(attempt.createdAt)}
                 </CustomText>
-                <XStack padding={4} onPress={confirmDelete} hitSlop={8}>
-                    <Feather name="trash-2" size={16} color="#A68A63"/>
+                <XStack alignItems="center" gap={10}>
+                    {attempt.grade !== null && (
+                        <XStack
+                            backgroundColor="#FBEAD9"
+                            paddingHorizontal={10}
+                            paddingVertical={2}
+                            borderRadius={999}
+                        >
+                            <CustomText size="p2Medium" color="#CB5A2E">
+                                {attempt.grade}/10
+                            </CustomText>
+                        </XStack>
+                    )}
+                    <XStack padding={4} onPress={confirmDelete} hitSlop={8}>
+                        <Feather name="trash-2" size={16} color="#A68A63"/>
+                    </XStack>
                 </XStack>
             </XStack>
             <XStack gap={16}>

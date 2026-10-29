@@ -113,6 +113,13 @@ const ReadingHistoryDetails = () => {
         }
     }, [attempt?.stressWordsJson]);
 
+    // Оцінка ще може з'явитися: триває перевірка наголосу або учень ще не
+    // надіслав результат тесту.
+    const gradePending = attempt !== undefined && attempt !== null && (
+        attempt.stressStatus === "PENDING" || attempt.stressStatus === "PROCESSING" ||
+        (attempt.quizTotal !== null && attempt.quizTotal > 0 && attempt.quizCorrect === null)
+    );
+
     const stressLabel = attempt?.stressStatus === "DONE" && attempt.stressAccuracy !== null
         ? `${Math.round(attempt.stressAccuracy * 100)}%`
         : attempt?.stressStatus === "PROCESSING" || attempt?.stressStatus === "PENDING"
@@ -183,6 +190,27 @@ const ReadingHistoryDetails = () => {
                                 borderColor="$gray-85"
                                 gap={12}
                             >
+                                <YStack gap={2} paddingBottom={12} borderBottomWidth={1} borderColor="$gray-85">
+                                    <XStack justifyContent="space-between" alignItems="center">
+                                        <CustomText size="h5Medium" color="$gray-20">
+                                            {i18n.t("reading_speed_grade")}
+                                        </CustomText>
+                                        {attempt.grade === null && gradePending ? (
+                                            <CustomText size="p2Regular" color="$gray-40">
+                                                {i18n.t("reading_speed_grade_pending")}
+                                            </CustomText>
+                                        ) : (
+                                            <CustomText size="h2" color="#CB5A2E">
+                                                {attempt.grade !== null ? `${attempt.grade}/10` : "—"}
+                                            </CustomText>
+                                        )}
+                                    </XStack>
+                                    {attempt.targetWpm !== null && (
+                                        <CustomText size="p3Regular" color="$gray-40">
+                                            {i18n.t("reading_history_grade_norm", {wpm: attempt.targetWpm})}
+                                        </CustomText>
+                                    )}
+                                </YStack>
                                 <XStack justifyContent="space-between">
                                     <CustomText size="p1Regular" color="$gray-40">
                                         {i18n.t("reading_speed_wpm")}
@@ -207,6 +235,16 @@ const ReadingHistoryDetails = () => {
                                         {attempt.correctCount}/{attempt.totalWords}
                                     </CustomText>
                                 </XStack>
+                                {attempt.quizTotal !== null && attempt.quizTotal > 0 && (
+                                    <XStack justifyContent="space-between">
+                                        <CustomText size="p2Regular" color="$gray-40">
+                                            {i18n.t("reading_speed_quiz_title")}
+                                        </CustomText>
+                                        <CustomText size="p2Medium" color="$gray-20">
+                                            {attempt.quizCorrect !== null ? `${attempt.quizCorrect}/${attempt.quizTotal}` : "—"}
+                                        </CustomText>
+                                    </XStack>
+                                )}
                                 {stressLabel && (
                                     <XStack justifyContent="space-between" paddingTop={8} borderTopWidth={1} borderColor="$gray-85">
                                         <CustomText size="p1Regular" color="$gray-40">
