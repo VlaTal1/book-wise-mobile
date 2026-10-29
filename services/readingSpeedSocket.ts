@@ -1,7 +1,13 @@
 import Constants from "expo-constants";
 
 import {getAccessToken} from "@/auth/supabase";
-import {ReadingSpeedServerMessage, ReferenceTextMessage, ResultMessage, WordEventMessage} from "@/types/ReadingSpeed";
+import {
+    ComprehensionQuizQuestion,
+    ReadingSpeedServerMessage,
+    ReferenceTextMessage,
+    ResultMessage,
+    WordEventMessage,
+} from "@/types/ReadingSpeed";
 
 const getWsBaseUrl = (): string => {
     const envVars = Constants.expoConfig?.extra;
@@ -13,6 +19,8 @@ const getWsBaseUrl = (): string => {
 
 export interface ReadingSpeedSocketHandlers {
     onWordEvent?: (message: WordEventMessage) => void;
+    onProcessing?: () => void;
+    onQuiz?: (questions: ComprehensionQuizQuestion[]) => void;
     onResult?: (message: ResultMessage) => void;
     onError?: (error: unknown) => void;
     onClose?: () => void;
@@ -54,6 +62,10 @@ export class ReadingSpeedSocket {
                         resolve(message);
                     } else if (message.type === "word_event") {
                         handlers.onWordEvent?.(message);
+                    } else if (message.type === "processing") {
+                        handlers.onProcessing?.();
+                    } else if (message.type === "quiz") {
+                        handlers.onQuiz?.(message.questions);
                     } else if (message.type === "result") {
                         handlers.onResult?.(message);
                     }

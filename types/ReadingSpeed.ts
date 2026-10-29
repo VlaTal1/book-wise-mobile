@@ -70,7 +70,22 @@ export interface ResultMessage {
     quiz: ComprehensionQuizQuestion[] | null;
 }
 
-export type ReadingSpeedServerMessage = ReferenceTextMessage | WordEventMessage | ResultMessage;
+// Читання завершено (стоп, таймер або дочитано до кінця), сервер рахує
+// результат — "result" прийде пізніше (після перевірки замін, тесту на
+// розуміння й збереження в Java).
+export interface ProcessingMessage {
+    type: "processing";
+}
+
+// Тест на розуміння приходить окремо, щойно згенерований — раніше за
+// "result", бо перевірка замін (Moonshine) триває довше. Порожній список —
+// тесту не буде (уривок закороткий або генерація не вдалася).
+export interface QuizMessage {
+    type: "quiz";
+    questions: ComprehensionQuizQuestion[];
+}
+
+export type ReadingSpeedServerMessage = ReferenceTextMessage | WordEventMessage | ProcessingMessage | QuizMessage | ResultMessage;
 
 // Рахується ПІСЛЯ основної сесії читання (потрібен повний аудіофайл) —
 // продовжується в фоні на бекенді, навіть якщо користувач покинув екран

@@ -11,6 +11,9 @@ const OPTION_LABELS = ["A", "B", "C", "D"];
 
 interface Props {
     questions: ComprehensionQuizQuestion[];
+    // Якщо передано — після останнього питання віддаємо рахунок батьку
+    // (екран сам покаже результати) замість власного підсумку.
+    onFinish?: (correctCount: number) => void;
 }
 
 // Невеликий тест на розуміння прочитаного одразу під результатами читання на
@@ -19,7 +22,7 @@ interface Props {
 // відміну від app/(app)/testPassing/test.tsx, тут усе лише в локальному
 // стані екрана: питання ефемерні (не мають id, ніде не зберігаються в Java),
 // тому без Redux і без збереження прогресу/оцінки.
-export const ComprehensionQuiz = ({questions}: Props) => {
+export const ComprehensionQuiz = ({questions, onFinish}: Props) => {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
     const [correctCount, setCorrectCount] = useState(0);
@@ -45,6 +48,10 @@ export const ComprehensionQuiz = ({questions}: Props) => {
 
     const onNext = () => {
         if (isLastQuestion) {
+            if (onFinish) {
+                onFinish(correctCount);
+                return;
+            }
             setFinished(true);
             return;
         }

@@ -29,19 +29,38 @@ const STRESS_TERMINAL_STATUSES: StressStatus[] = ["DONE", "FAILED", "NOT_APPLICA
 // навмисно: скільки встигла прочитати, стільки й враховується в метриці.
 const READING_TIME_LIMIT_SECONDS = 60;
 
-type Phase = "idle" | "connecting" | "reading" | "finished";
+// processing — читання вже завершено, сервер ще рахує результат (перевірка
+// замін Moonshine, тест на розуміння, збереження в Java).
+// quiz — тест на розуміння приходить раніше за результат: учень проходить
+// його, поки триває перевірка замін, і лише потім бачить результати.
+type Phase = "idle" | "connecting" | "reading" | "processing" | "quiz" | "finished";
 
 const ReadingSpeed = () => {
     const router = useRouter();
     const {studentId} = useRole();
 
-    const [phase, setPhase] = useState<Phase>("idle");
+    const [phase, setPhaseState] = useState<Phase>("idle");
+    // Колбеки сокета створюються один раз у handleStart — актуальну фазу
+    // читаємо через ref. Оновлюємо його одразу разом зі state, а не в
+    // useEffect: "result" може прийти через мілісекунди після "quiz" (коли
+    // Moonshine впорався швидше за генерацію тесту), ще до рендера.
+    const phaseRef = useRef<Phase>("idle");
+    const setPhase = (next: Phase) => {
+        phaseRef.current = next;
+        setPhaseState(next);
+    };
     const [referenceWords, setReferenceWords] = useState<ReferenceWord[]>([]);
     const [referenceTitle, setReferenceTitle] = useState("");
     const [statuses, setStatuses] = useState<Record<number, WordStatus>>({});
     const [tentativeStatuses, setTentativeStatuses] = useState<Record<number, WordStatus>>({});
     const [metrics, setMetrics] = useState<ReadingSpeedMetrics | null>(null);
     const [quiz, setQuiz] = useState<ComprehensionQuizQuestion[] | null>(null);
+    const [quizScore, setQuizScore] = useState<number | null>(null);
+    // Стан сесії для колбеків сокета й завершення тесту (замикання не бачать
+    // свіжий state).
+    const resultReceivedRef = useRef(false);
+    const quizReceivedRef = useRef(false);
+    const socketClosedRef = useRef(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
     // Окремий (асинхронний, рахується в фоні на бекенді) шар перевірки
@@ -148,6 +167,10 @@ const ReadingSpeed = () => {
         setTentativeStatuses({});
         setMetrics(null);
         setQuiz(null);
+        setQuizScore(null);
+        resultReceivedRef.current = false;
+        quizReceivedRef.current = false;
+        socketClosedRef.current = false;
         setAttemptId(null);
         setStressStatus(null);
         setStressProgress(null);
@@ -175,12 +198,35 @@ const ReadingSpeed = () => {
                         setStatuses((prev) => ({...prev, [event.index]: event.status}));
                     }
                 },
-                onResult: (result) => {
+                // Сервер сам завершив читання (напр. дочитано до кінця) —
+                // одразу показуємо екран результатів у стані обробки.
+                onProcessing: () => {
                     stopReadingTimer();
-                    setMetrics(result.metrics);
-                    setQuiz(result.quiz);
-                    setPhase("finished");
                     stopAudioStream();
+                    setPhase("processing");
+                },
+                onQuiz: (questions) => {
+                    quizReceivedRef.current = true;
+                    if (questions.length > 0) {
+                        setQuiz(questions);
+                        setPhase("quiz");
+                    }
+                },
+                onResult: (result) => {
+                    resultReceivedRef.current = true;
+                    stopReadingTimer();
+                    stopAudioStream();
+                    setMetrics(result.metrics);
+                    // Старий Python-сервіс шле тест лише в "result" — тоді
+                    // показуємо його зараз, перед результатами.
+                    if (!quizReceivedRef.current && result.quiz && result.quiz.length > 0) {
+                        quizReceivedRef.current = true;
+                        setQuiz(result.quiz);
+                        setPhase("quiz");
+                    } else if (phaseRef.current !== "quiz") {
+                        // Учень ще проходить тест — результати покажемо після нього.
+                        setPhase("finished");
+                    }
                     if (result.attempt_id !== null) {
                         setAttemptId(result.attempt_id);
                         setStressStatus("PENDING");
@@ -192,6 +238,13 @@ const ReadingSpeed = () => {
                 },
                 onClose: () => {
                     socketRef.current = null;
+                    socketClosedRef.current = true;
+                    // Сокет закрився, а результату так і не було — не лишаємо
+                    // користувача з вічним лоадером.
+                    if (phaseRef.current === "processing" && !resultReceivedRef.current) {
+                        setErrorMessage(i18n.t("reading_speed_processing_failed"));
+                        setPhase("idle");
+                    }
                 },
             });
 
@@ -210,9 +263,27 @@ const ReadingSpeed = () => {
         }
     };
 
+    // Після тесту — результати, якщо вони вже прийшли; інакше чекаємо їх на
+    // екрані обробки (або повідомляємо про помилку, якщо сокет уже закрито).
+    const handleQuizFinish = (correctCount: number) => {
+        setQuizScore(correctCount);
+        if (resultReceivedRef.current) {
+            setPhase("finished");
+        } else if (socketClosedRef.current) {
+            setErrorMessage(i18n.t("reading_speed_processing_failed"));
+            setPhase("idle");
+        } else {
+            setPhase("processing");
+        }
+    };
+
+    // Не чекаємо "processing" від сервера — користувач одразу бачить екран
+    // результатів з індикатором обробки.
     const handleStop = () => {
+        stopReadingTimer();
         stopAudioStream();
         socketRef.current?.stop();
+        setPhase("processing");
     };
 
     const handleRestart = () => {
@@ -303,6 +374,40 @@ const ReadingSpeed = () => {
                         </>
                     )}
 
+                    {phase === "processing" && (
+                        <YStack flex={1} justifyContent="center">
+                            <YStack
+                                backgroundColor="#FFFFFF"
+                                borderRadius={28}
+                                padding={24}
+                                borderWidth={1}
+                                borderColor="$gray-85"
+                                gap={12}
+                                alignItems="center"
+                                style={{
+                                    shadowColor: "rgba(43, 32, 19, 0.08)",
+                                    shadowOffset: {width: 0, height: 4},
+                                    shadowRadius: 10,
+                                    shadowOpacity: 1,
+                                }}
+                            >
+                                <ActivityIndicator size="large" color="#CB5A2E"/>
+                                <CustomText size="h5Medium" color="$gray-20" textAlign="center">
+                                    {i18n.t("reading_speed_processing")}
+                                </CustomText>
+                                <CustomText size="p2Regular" color="$gray-40" textAlign="center">
+                                    {i18n.t("reading_speed_processing_hint")}
+                                </CustomText>
+                            </YStack>
+                        </YStack>
+                    )}
+
+                    {phase === "quiz" && quiz && (
+                        <ScrollView style={{flex: 1}} contentContainerStyle={{flexGrow: 1, justifyContent: "center"}}>
+                            <ComprehensionQuiz questions={quiz} onFinish={handleQuizFinish}/>
+                        </ScrollView>
+                    )}
+
                     {phase === "finished" && metrics && (
                         <YStack flex={1} gap={16} justifyContent="center">
                             <YStack
@@ -360,6 +465,17 @@ const ReadingSpeed = () => {
                                     </CustomText>
                                 </XStack>
 
+                                {quizScore !== null && quiz && (
+                                    <XStack justifyContent="space-between">
+                                        <CustomText size="p2Regular" color="$gray-40">
+                                            {i18n.t("reading_speed_quiz_title")}
+                                        </CustomText>
+                                        <CustomText size="p2Medium" color="$gray-20">
+                                            {quizScore}/{quiz.length}
+                                        </CustomText>
+                                    </XStack>
+                                )}
+
                                 {stressStatus && stressStatus !== "NOT_APPLICABLE" && (
                                     <YStack gap={6} paddingTop={4} borderTopWidth={1} borderColor="$gray-85">
                                         <XStack justifyContent="space-between" alignItems="center" paddingTop={8}>
@@ -409,12 +525,6 @@ const ReadingSpeed = () => {
                                     </YStack>
                                 )}
                             </YStack>
-
-                            {quiz && quiz.length > 0 && (
-                                <ScrollView style={{flex: 1}}>
-                                    <ComprehensionQuiz questions={quiz}/>
-                                </ScrollView>
-                            )}
 
                             <PrimaryButton
                                 text={i18n.t("reading_speed_try_again")}
