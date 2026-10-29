@@ -117,7 +117,7 @@ const ReadingHistoryDetails = () => {
     // надіслав результат тесту.
     const gradePending = attempt !== undefined && attempt !== null && (
         attempt.stressStatus === "PENDING" || attempt.stressStatus === "PROCESSING" ||
-        (attempt.quizTotal !== null && attempt.quizTotal > 0 && attempt.quizCorrect === null)
+        (attempt.quizTotal != null && attempt.quizTotal > 0 && attempt.quizCorrect == null)
     );
 
     const stressLabel = attempt?.stressStatus === "DONE" && attempt.stressAccuracy !== null
@@ -195,17 +195,17 @@ const ReadingHistoryDetails = () => {
                                         <CustomText size="h5Medium" color="$gray-20">
                                             {i18n.t("reading_speed_grade")}
                                         </CustomText>
-                                        {attempt.grade === null && gradePending ? (
+                                        {attempt.grade == null && gradePending ? (
                                             <CustomText size="p2Regular" color="$gray-40">
                                                 {i18n.t("reading_speed_grade_pending")}
                                             </CustomText>
                                         ) : (
                                             <CustomText size="h2" color="#CB5A2E">
-                                                {attempt.grade !== null ? `${attempt.grade}/10` : "—"}
+                                                {attempt.grade != null ? `${attempt.grade}/10` : "—"}
                                             </CustomText>
                                         )}
                                     </XStack>
-                                    {attempt.targetWpm !== null && (
+                                    {attempt.targetWpm != null && (
                                         <CustomText size="p3Regular" color="$gray-40">
                                             {i18n.t("reading_history_grade_norm", {wpm: attempt.targetWpm})}
                                         </CustomText>
@@ -235,13 +235,13 @@ const ReadingHistoryDetails = () => {
                                         {attempt.correctCount}/{attempt.totalWords}
                                     </CustomText>
                                 </XStack>
-                                {attempt.quizTotal !== null && attempt.quizTotal > 0 && (
+                                {attempt.quizTotal != null && attempt.quizTotal > 0 && (
                                     <XStack justifyContent="space-between">
                                         <CustomText size="p2Regular" color="$gray-40">
                                             {i18n.t("reading_speed_quiz_title")}
                                         </CustomText>
                                         <CustomText size="p2Medium" color="$gray-20">
-                                            {attempt.quizCorrect !== null ? `${attempt.quizCorrect}/${attempt.quizTotal}` : "—"}
+                                            {attempt.quizCorrect != null ? `${attempt.quizCorrect}/${attempt.quizTotal}` : "—"}
                                         </CustomText>
                                     </XStack>
                                 )}

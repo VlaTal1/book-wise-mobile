@@ -8,4 +8,6 @@ export type ReadingSpeedDailyStats = {
     // null, якщо жодна спроба цього дня ще не має завершеного (DONE)
     // результату шару перевірки наголосу.
     averageStressAccuracy: number | null;
+    // null, якщо цього дня немає оціненої спроби.
+    averageGrade: number | null;
 };

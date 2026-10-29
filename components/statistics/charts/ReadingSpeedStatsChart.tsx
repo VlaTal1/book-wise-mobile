@@ -90,6 +90,14 @@ const ReadingSpeedStatsChart: React.FC<Props> = ({data, height = 300, width = 30
                 <View gap={2}>
                     <XStack justifyContent="space-between">
                         <CustomText size="p1Regular" color="$gray-40">
+                            {i18n.t("reading_speed_grade")}
+                        </CustomText>
+                        <CustomText size="p1Medium" color="#CB5A2E">
+                            {item.averageGrade != null ? item.averageGrade.toFixed(1) : "—"}
+                        </CustomText>
+                    </XStack>
+                    <XStack justifyContent="space-between">
+                        <CustomText size="p1Regular" color="$gray-40">
                             {i18n.t("reading_speed_wpm")}
                         </CustomText>
                         <CustomText size="p1Regular" color="$gray-20">

@@ -58,7 +58,7 @@ const ReadingHistoryRow = ({attempt, onPress, onDelete}: {
                     {formatDate(attempt.createdAt)}
                 </CustomText>
                 <XStack alignItems="center" gap={10}>
-                    {attempt.grade !== null && (
+                    {attempt.grade != null && (
                         <XStack
                             backgroundColor="#FBEAD9"
                             paddingHorizontal={10}

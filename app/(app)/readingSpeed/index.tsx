@@ -277,7 +277,7 @@ const ReadingSpeed = () => {
         }
         setQuizSubmitted(true);
         readingSpeedAttemptApi.submitQuizResult({id: attemptId, correct: quizScore}).then((response) => {
-            if (response.success && response.data.grade !== null) {
+            if (response.success && response.data.grade != null) {
                 setGrade(response.data.grade);
             }
         });
@@ -287,7 +287,7 @@ const ReadingSpeed = () => {
     // відправлено результат тесту (якщо тест був).
     const quizPending = (quiz?.length ?? 0) > 0 && !quizSubmitted;
     const stressPending = stressStatus === null || !STRESS_TERMINAL_STATUSES.includes(stressStatus);
-    const gradePending = grade === null && attemptId !== null && (quizPending || stressPending);
+    const gradePending = grade == null && attemptId !== null && (quizPending || stressPending);
 
     // Після тесту — результати, якщо вони вже прийшли; інакше чекаємо їх на
     // екрані обробки (або повідомляємо про помилку, якщо сокет уже закрито).
@@ -469,7 +469,7 @@ const ReadingSpeed = () => {
                                         </XStack>
                                     ) : (
                                         <CustomText size="h2" color="#CB5A2E">
-                                            {grade !== null ? `${grade}/10` : "—"}
+                                            {grade != null ? `${grade}/10` : "—"}
                                         </CustomText>
                                     )}
                                 </XStack>

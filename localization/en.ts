@@ -266,6 +266,13 @@ const en = {
     "classroom_target_wpm_hint": "Approximate norms for reading aloud: grade 1 — 30–40, grade 2 — 50–60, grade 3 — 65–75, grade 4 — 80–90, grades 5–6 — 100–110, grade 7+ — 120.",
     "classroom_target_wpm_value": "Reading norm: %{wpm} words/min",
     "reading_history_grade_norm": "Graded against the class norm of %{wpm} words/min",
+    "reading_speed_stats_grades": "Grades",
+    "grades_class_average": "Class average",
+    "grades_graded_attempts": "Graded readings: %{count}",
+    "grades_last": "last %{grade}",
+    "grades_not_read_yet": "hasn't read yet",
+    "grades_dynamics": "Grades over time: %{name}",
+    "grades_no_grades_yet": "No grades yet",
 };
 
 export default en;

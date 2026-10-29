@@ -266,6 +266,13 @@ const ua = {
     "classroom_target_wpm_hint": "Орієнтовні норми читання вголос: 1 клас — 30–40, 2 клас — 50–60, 3 клас — 65–75, 4 клас — 80–90, 5–6 клас — 100–110, 7+ клас — 120.",
     "classroom_target_wpm_value": "Норма читання: %{wpm} сл/хв",
     "reading_history_grade_norm": "Оцінено за нормою класу %{wpm} сл/хв",
+    "reading_speed_stats_grades": "Оцінки",
+    "grades_class_average": "Середній бал класу",
+    "grades_graded_attempts": "Оцінених читань: %{count}",
+    "grades_last": "остання %{grade}",
+    "grades_not_read_yet": "ще не читав(-ла)",
+    "grades_dynamics": "Динаміка оцінок: %{name}",
+    "grades_no_grades_yet": "Оцінок ще немає",
 };
 
 export default ua;

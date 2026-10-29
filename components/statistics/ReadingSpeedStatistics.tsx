@@ -10,6 +10,7 @@ import participantApi from "@/api/endpoints/participantApi";
 import SegmentedControl from "@/components/SegmentedControl";
 import ReadingSpeedStatsChart from "@/components/statistics/charts/ReadingSpeedStatsChart";
 import ReadingSpeedDailyChart from "@/components/statistics/charts/ReadingSpeedDailyChart";
+import GradesStatistics from "@/components/statistics/GradesStatistics";
 
 const cardShadow = {
     shadowColor: "rgba(43, 32, 19, 0.06)",
@@ -54,6 +55,7 @@ const ReadingSpeedStatistics = () => {
     const innerTabs = useMemo(() => ([
         i18n.t("reading_speed_stats_average"),
         i18n.t("reading_speed_stats_daily"),
+        i18n.t("reading_speed_stats_grades"),
     ]), []);
     const [innerTab, setInnerTab] = useState(0);
     const [selectedParticipantId, setSelectedParticipantId] = useState<number | null>(null);
@@ -99,7 +101,12 @@ const ReadingSpeedStatistics = () => {
     useEffect(() => {
         if (innerTab === 0) {
             getReadingSpeedApi.execute();
+        } else if (innerTab === 1) {
+            fetchParticipantsApi.execute();
         } else {
+            // Рейтинг бере оцінки зі статистики, а список учнів — щоб показати
+            // й тих, хто ще не читав.
+            getReadingSpeedApi.execute();
             fetchParticipantsApi.execute();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -137,6 +144,14 @@ const ReadingSpeedStatistics = () => {
                         <ActivityIndicator size="large" color="#CB5A2E"/>
                     ) : (
                         <ReadingSpeedStatsChart data={getReadingSpeedApi.data}/>
+                    )
+                )}
+
+                {innerTab === 2 && (
+                    getReadingSpeedApi.loading || !getReadingSpeedApi.data || fetchParticipantsApi.loading ? (
+                        <ActivityIndicator size="large" color="#CB5A2E"/>
+                    ) : (
+                        <GradesStatistics stats={getReadingSpeedApi.data} students={participants}/>
                     )
                 )}
 
