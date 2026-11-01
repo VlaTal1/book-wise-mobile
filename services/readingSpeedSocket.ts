@@ -17,6 +17,12 @@ const getWsBaseUrl = (): string => {
     return envVars["pythonWsBaseUrl"];
 };
 
+export class ReadingSpeedConnectError extends Error {
+    constructor(public reason: string) {
+        super(reason || "Connection closed");
+    }
+}
+
 export interface ReadingSpeedSocketHandlers {
     onWordEvent?: (message: WordEventMessage) => void;
     onProcessing?: () => void;
@@ -36,7 +42,14 @@ export class ReadingSpeedSocket {
     // (~300-340 слів) з книги, призначеної дитині (services/book_excerpt.py
     // на боці Python). Явний textId лишається лише для розробки/діагностики
     // (фіксований eталонний текст).
-    async connect(participantId: string, textId: string | undefined, handlers: ReadingSpeedSocketHandlers): Promise<ReferenceTextMessage> {
+    // assignmentId — фрагмент, призначений класу вчителем (текст, ліміт часу
+    // і кількість спроб задає вчитель).
+    async connect(
+        participantId: string,
+        textId: string | undefined,
+        handlers: ReadingSpeedSocketHandlers,
+        assignmentId?: number,
+    ): Promise<ReferenceTextMessage> {
         const token = await getAccessToken();
         if (!token) {
             throw new Error("No access token available");
@@ -46,6 +59,9 @@ export class ReadingSpeedSocket {
         const params = new URLSearchParams({token, participant_id: participantId});
         if (textId) {
             params.set("text_id", textId);
+        }
+        if (assignmentId !== undefined) {
+            params.set("assignment_id", assignmentId.toString());
         }
         const url = `${baseUrl}/ws/reading-speed?${params.toString()}`;
 
@@ -74,14 +90,18 @@ export class ReadingSpeedSocket {
                 }
             };
 
+            // Відмову до старту сесії обробляє onclose (він завжди йде після
+            // onerror) — лише там доступна причина закриття від сервера.
             ws.onerror = (event) => {
-                if (!referenceReceived) {
-                    reject(event);
-                }
                 handlers.onError?.(event);
             };
 
-            ws.onclose = () => {
+            ws.onclose = (event) => {
+                // Сервер відмовив ще до початку (напр. вичерпано спроби) —
+                // причина приходить у reason закриття.
+                if (!referenceReceived) {
+                    reject(new ReadingSpeedConnectError(event.reason || ""));
+                }
                 handlers.onClose?.();
             };
         });

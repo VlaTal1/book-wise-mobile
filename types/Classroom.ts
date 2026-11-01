@@ -1,6 +1,7 @@
 import {Participant} from "@/types/Paticipant";
 import {Book} from "@/types/Book";
 import {GenerationStatus} from "@/types/Test";
+import {ClassroomReading} from "@/types/ClassroomReading";
 
 export type Classroom = {
     id: number;
@@ -29,6 +30,8 @@ export type ClassroomDetails = Classroom & {
     students: Participant[];
     books: Book[];
     tests: ClassroomTest[];
+    // Фрагменти для читання на швидкість (лише для вчителя).
+    readings?: ClassroomReading[];
 }
 
 export type ClassroomTestRequest = {

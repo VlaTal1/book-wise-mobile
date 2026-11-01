@@ -14,7 +14,10 @@ import {HighlightedWordText} from "@/components/readingSpeed/HighlightedWordText
 import i18n from "@/localization/i18n";
 import {useRole} from "@/hooks/roleContext";
 import {requestMicrophonePermission, startAudioStream, stopAudioStream} from "@/services/audioStreamRecorder";
-import {ReadingSpeedSocket} from "@/services/readingSpeedSocket";
+import {ReadingSpeedConnectError, ReadingSpeedSocket} from "@/services/readingSpeedSocket";
+import classroomReadingApi from "@/api/endpoints/classroomReadingApi";
+import {ClassroomReading} from "@/types/ClassroomReading";
+import {StudentReadingCard} from "@/components/readingSpeed/StudentReadingCard";
 import readingSpeedAttemptApi from "@/api/endpoints/readingSpeedAttemptApi";
 import {ComprehensionQuizQuestion, ReadingSpeedMetrics, ReferenceWord, StressStatus, WordStatus} from "@/types/ReadingSpeed";
 
@@ -24,9 +27,10 @@ import {ComprehensionQuizQuestion, ReadingSpeedMetrics, ReferenceWord, StressSta
 const STRESS_POLL_INTERVAL_MS = 3000;
 const STRESS_TERMINAL_STATUSES: StressStatus[] = ["DONE", "FAILED", "NOT_APPLICABLE"];
 
-// Уривок (~300-340 слів, services/book_excerpt.py на боці Python) явно
-// довший за час, який дитина встигає прочитати вголос за хвилину — це
-// навмисно: скільки встигла прочитати, стільки й враховується в метриці.
+// Вільне тренування: уривок (~300-340 слів, services/book_excerpt.py на боці
+// Python) явно довший за час, який дитина встигає прочитати вголос за
+// хвилину — це навмисно: скільки встигла прочитати, стільки й враховується
+// в метриці. У завданні класу ліміт задає вчитель (або без ліміту).
 const READING_TIME_LIMIT_SECONDS = 60;
 
 // processing — читання вже завершено, сервер ще рахує результат (перевірка
@@ -76,6 +80,12 @@ const ReadingSpeed = () => {
     const [quizSubmitted, setQuizSubmitted] = useState(false);
 
     const [secondsLeft, setSecondsLeft] = useState(READING_TIME_LIMIT_SECONDS);
+    // null — без ліміту: показуємо, скільки часу минуло, і не зупиняємо самі.
+    const [timeLimit, setTimeLimit] = useState<number | null>(READING_TIME_LIMIT_SECONDS);
+    const [elapsedSeconds, setElapsedSeconds] = useState(0);
+    // Завдання від вчителя (фрагменти класу).
+    const [assignments, setAssignments] = useState<ClassroomReading[]>([]);
+    const [assignmentsLoading, setAssignmentsLoading] = useState(false);
 
     const socketRef = useRef<ReadingSpeedSocket | null>(null);
     const stressPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -99,9 +109,17 @@ const ReadingSpeed = () => {
     // (постановка задачі). По закінченню часу завершуємо сесію так само, як
     // і по кнопці "Стоп" (handleStop): сервер сам фіналізує розпізнане на
     // цей момент і надішле "result".
-    const startReadingTimer = () => {
+    const startReadingTimer = (limit: number | null) => {
         stopReadingTimer();
-        setSecondsLeft(READING_TIME_LIMIT_SECONDS);
+        setTimeLimit(limit);
+        setElapsedSeconds(0);
+        if (limit === null) {
+            readingTimerRef.current = setInterval(() => {
+                setElapsedSeconds((prev) => prev + 1);
+            }, 1000);
+            return;
+        }
+        setSecondsLeft(limit);
         readingTimerRef.current = setInterval(() => {
             setSecondsLeft((prev) => {
                 if (prev <= 1) {
@@ -161,7 +179,25 @@ const ReadingSpeed = () => {
         return true;
     });
 
-    const handleStart = async () => {
+    const loadAssignments = async () => {
+        setAssignmentsLoading(true);
+        const response = await classroomReadingApi.fetchMyReadings();
+        if (response.success) {
+            setAssignments(response.data);
+        }
+        setAssignmentsLoading(false);
+    };
+
+    // Список завдань оновлюємо щоразу, як повертаємось до вибору (після
+    // спроби змінилися використані спроби й найкраща оцінка).
+    useEffect(() => {
+        if (phase === "idle" && studentId) {
+            loadAssignments();
+        }
+    }, [phase, studentId]);
+
+    // assignment — фрагмент, призначений класу; без нього — вільне тренування.
+    const handleStart = async (assignment?: ClassroomReading) => {
         if (!studentId) {
             return;
         }
@@ -252,19 +288,21 @@ const ReadingSpeed = () => {
                         setPhase("idle");
                     }
                 },
-            });
+            }, assignment?.id);
 
             setReferenceWords(reference.words);
             setReferenceTitle(reference.title);
             setPhase("reading");
-            startReadingTimer();
+            // Старий Python-сервіс ліміт не надсилає — тоді стандартна хвилина.
+            startReadingTimer(reference.time_limit_seconds !== undefined ? reference.time_limit_seconds : READING_TIME_LIMIT_SECONDS);
 
             startAudioStream((chunk) => {
                 socketRef.current?.sendAudioChunk(chunk);
             });
         } catch (error) {
             console.error("[ReadingSpeed] failed to start session", error);
-            setErrorMessage(i18n.t("reading_speed_connection_failed"));
+            const noAttempts = error instanceof ReadingSpeedConnectError && error.reason === "No attempts left";
+            setErrorMessage(i18n.t(noAttempts ? "reading_no_attempts_left" : "reading_speed_connection_failed"));
             setPhase("idle");
         }
     };
@@ -320,7 +358,8 @@ const ReadingSpeed = () => {
         setPhase("idle");
     };
 
-    const formattedTimeLeft = `${Math.floor(secondsLeft / 60)}:${String(secondsLeft % 60).padStart(2, "0")}`;
+    const formatSeconds = (value: number) => `${Math.floor(value / 60)}:${String(value % 60).padStart(2, "0")}`;
+    const formattedTimeLeft = timeLimit === null ? formatSeconds(elapsedSeconds) : formatSeconds(secondsLeft);
 
     return (
         <>
@@ -355,16 +394,54 @@ const ReadingSpeed = () => {
                     )}
 
                     {phase === "idle" && studentId && (
-                        <YStack flex={1} justifyContent="center" alignItems="center" gap={16}>
-                            <CustomText size="p1Regular" color="$gray-40" textAlign="center">
+                        <ScrollView style={{flex: 1}} contentContainerStyle={{gap: 16, paddingBottom: 24}}>
+                            <CustomText size="p1Regular" color="$gray-40">
                                 {i18n.t("reading_speed_description")}
                             </CustomText>
-                            <PrimaryButton
-                                text={i18n.t("reading_speed_start")}
-                                onPress={handleStart}
-                                width="80%"
-                            />
-                        </YStack>
+
+                            <YStack gap={8}>
+                                <CustomText size="h5Medium" color="$gray-20">
+                                    {i18n.t("reading_assignments")}
+                                </CustomText>
+                                {assignmentsLoading && assignments.length === 0 && (
+                                    <ActivityIndicator size="small" color="#CB5A2E"/>
+                                )}
+                                {!assignmentsLoading && assignments.length === 0 && (
+                                    <CustomText size="p2Regular" color="$gray-40">
+                                        {i18n.t("reading_no_assignments")}
+                                    </CustomText>
+                                )}
+                                {assignments.map((assignment) => (
+                                    <StudentReadingCard
+                                        key={assignment.id}
+                                        reading={assignment}
+                                        onStart={() => handleStart(assignment)}
+                                    />
+                                ))}
+                            </YStack>
+
+                            <YStack
+                                backgroundColor="#FFFFFF"
+                                borderRadius={20}
+                                padding={16}
+                                borderWidth={1}
+                                borderColor="$gray-85"
+                                gap={12}
+                            >
+                                <YStack gap={2}>
+                                    <CustomText size="h5Medium" color="$gray-20">
+                                        {i18n.t("reading_free_practice")}
+                                    </CustomText>
+                                    <CustomText size="p2Regular" color="$gray-40">
+                                        {i18n.t("reading_free_practice_hint")}
+                                    </CustomText>
+                                </YStack>
+                                <PrimaryButton
+                                    text={i18n.t("reading_speed_start")}
+                                    onPress={() => handleStart()}
+                                />
+                            </YStack>
+                        </ScrollView>
                     )}
 
                     {phase === "connecting" && (
@@ -381,7 +458,7 @@ const ReadingSpeed = () => {
                                 </CustomText>
                                 <CustomText
                                     size="h4Medium"
-                                    color={secondsLeft <= 10 ? "$error-primary" : "$gray-20"}
+                                    color={timeLimit !== null && secondsLeft <= 10 ? "$error-primary" : "$gray-20"}
                                 >
                                     {formattedTimeLeft}
                                 </CustomText>

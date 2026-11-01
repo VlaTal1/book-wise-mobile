@@ -22,6 +22,10 @@ import PrimaryButton from "@/components/buttons/PrimaryButton";
 import SecondaryButton from "@/components/buttons/SecondaryButton";
 import BookSelectModal from "@/components/modal/book-select-modal";
 import CreateTestModal from "@/components/modal/create-test-modal";
+import CreateReadingModal from "@/components/modal/create-reading-modal";
+import ClassroomReadingCard from "@/components/buttons/ClassroomReadingCard";
+import classroomReadingApi from "@/api/endpoints/classroomReadingApi";
+import {ClassroomReading} from "@/types/ClassroomReading";
 import JoinClassroomModal from "@/components/modal/join-classroom-modal";
 import CreateClassroomModal from "@/components/modal/create-classroom-modal";
 import {useRole} from "@/hooks/roleContext";
@@ -36,6 +40,7 @@ const ClassroomScreen = () => {
 
     const [isBookSelectModalOpen, setIsBookSelectModalOpen] = useState(false);
     const [isCreateTestModalOpen, setIsCreateTestModalOpen] = useState(false);
+    const [isCreateReadingModalOpen, setIsCreateReadingModalOpen] = useState(false);
     const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
@@ -132,6 +137,37 @@ const ClassroomScreen = () => {
             },
         },
     );
+
+    const deleteReadingApi = useApi(
+        classroomReadingApi.deleteReading,
+        {
+            onSuccess: () => {
+                fetchClassroomApi.execute(classroomId);
+            },
+            errorHandler: {
+                title: i18n.t("error"),
+                message: `${i18n.t("failed_to_delete_reading")}\n${i18n.t("please_try_again_later")}`,
+                options: {
+                    cancel: true,
+                },
+            },
+        },
+    );
+
+    const onDeleteReading = useCallback((reading: ClassroomReading) => {
+        Alert.alert(
+            i18n.t("delete_reading"),
+            i18n.t("delete_reading_confirm"),
+            [
+                {text: i18n.t("cancel"), style: "cancel"},
+                {
+                    text: i18n.t("delete"),
+                    style: "destructive",
+                    onPress: () => deleteReadingApi.execute({classroomId, readingId: reading.id.toString()}),
+                },
+            ],
+        );
+    }, [deleteReadingApi, classroomId]);
 
     const invokeFetchClassroom = useCallback(() => {
         fetchClassroomApi.execute(classroomId);
@@ -384,6 +420,30 @@ const ClassroomScreen = () => {
                             </YStack>
                         )}
 
+                        {isTeacher && (
+                            <YStack gap={12}>
+                                <CustomText size="h5Medium" color="$gray-20" paddingLeft={4}>
+                                    {i18n.t("classroom_readings")}
+                                </CustomText>
+                                {(classroom.readings ?? []).length === 0 && (
+                                    <CustomText size="p2Regular" color="$gray-40" paddingLeft={4}>
+                                        {i18n.t("classroom_no_readings")}
+                                    </CustomText>
+                                )}
+                                <YStack gap={8}>
+                                    {(classroom.readings ?? []).map((reading) => (
+                                        <ClassroomReadingCard
+                                            key={reading.id}
+                                            reading={reading}
+                                            onPress={() => router.navigate(`/classroomReading/${reading.id}?classroomId=${classroom.id}`)}
+                                            onDelete={() => onDeleteReading(reading)}
+                                            disabled={deleteReadingApi.loading}
+                                        />
+                                    ))}
+                                </YStack>
+                            </YStack>
+                        )}
+
                         <YStack gap={12}>
                             <CustomText size="h5Medium" color="$gray-20" paddingLeft={4}>
                                 {i18n.t("classroom_books")}
@@ -415,11 +475,20 @@ const ClassroomScreen = () => {
                             text={i18n.t("assign_book")}
                             disabled={assignBookApi.loading}
                         />
-                        <SecondaryButton
-                            onPress={() => setIsCreateTestModalOpen(true)}
-                            text={i18n.t("assign_test")}
-                            disabled={classroom.books.length === 0 || classroom.students.length === 0}
-                        />
+                        <XStack gap={6}>
+                            <SecondaryButton
+                                flex={1}
+                                onPress={() => setIsCreateTestModalOpen(true)}
+                                text={i18n.t("assign_test")}
+                                disabled={classroom.books.length === 0 || classroom.students.length === 0}
+                            />
+                            <SecondaryButton
+                                flex={1}
+                                onPress={() => setIsCreateReadingModalOpen(true)}
+                                text={i18n.t("assign_reading")}
+                                disabled={classroom.books.length === 0}
+                            />
+                        </XStack>
                     </YStack>
                 ) : (
                     <SecondaryButton
@@ -442,6 +511,14 @@ const ClassroomScreen = () => {
                         onClose={() => setIsEditModalOpen(false)}
                         onSave={invokeFetchClassroom}
                         classroom={classroom}
+                    />
+                    <CreateReadingModal
+                        isOpen={isCreateReadingModalOpen}
+                        onClose={() => setIsCreateReadingModalOpen(false)}
+                        onSave={invokeFetchClassroom}
+                        classroomId={classroom.id}
+                        classroomName={classroom.name}
+                        books={classroom.books}
                     />
                     <CreateTestModal
                         isOpen={isCreateTestModalOpen}

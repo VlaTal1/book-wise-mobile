@@ -19,6 +19,11 @@ export interface ReferenceTextMessage {
     text_id: string;
     title: string;
     words: ReferenceWord[];
+    // Ліміт часу на читання: 60 с у вільному тренуванні, у завданні класу —
+    // як задав вчитель; null — без ліміту (читати до кінця фрагмента).
+    time_limit_seconds?: number | null;
+    // Завдання класу, якщо читається призначений фрагмент.
+    assignment_id?: number | null;
 }
 
 export interface WordEventMessage {
