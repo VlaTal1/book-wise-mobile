@@ -23,6 +23,8 @@ import SecondaryButton from "@/components/buttons/SecondaryButton";
 import BookSelectModal from "@/components/modal/book-select-modal";
 import CreateTestModal from "@/components/modal/create-test-modal";
 import CreateReadingModal from "@/components/modal/create-reading-modal";
+import AddLocalStudentModal from "@/components/modal/add-local-student-modal";
+import {Participant} from "@/types/Paticipant";
 import ClassroomReadingCard from "@/components/buttons/ClassroomReadingCard";
 import classroomReadingApi from "@/api/endpoints/classroomReadingApi";
 import {ClassroomReading} from "@/types/ClassroomReading";
@@ -31,7 +33,7 @@ import CreateClassroomModal from "@/components/modal/create-classroom-modal";
 import {useRole} from "@/hooks/roleContext";
 
 const ClassroomScreen = () => {
-    const {isTeacher, refreshProfile} = useRole();
+    const {isTeacher, refreshProfile, startStudentMode} = useRole();
     const {id} = useLocalSearchParams();
     const classroomId = typeof id === "string" ? id : id[0];
     const router = useRouter();
@@ -41,6 +43,7 @@ const ClassroomScreen = () => {
     const [isBookSelectModalOpen, setIsBookSelectModalOpen] = useState(false);
     const [isCreateTestModalOpen, setIsCreateTestModalOpen] = useState(false);
     const [isCreateReadingModalOpen, setIsCreateReadingModalOpen] = useState(false);
+    const [isAddStudentModalOpen, setIsAddStudentModalOpen] = useState(false);
     const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
@@ -168,6 +171,45 @@ const ClassroomScreen = () => {
             ],
         );
     }, [deleteReadingApi, classroomId]);
+
+    const removeLocalStudentApi = useApi(
+        classroomApi.removeLocalStudent,
+        {
+            onSuccess: (data) => {
+                setClassroom(data);
+            },
+            errorHandler: {
+                title: i18n.t("error"),
+                message: `${i18n.t("failed_to_remove_local_student")}\n${i18n.t("please_try_again_later")}`,
+                options: {
+                    cancel: true,
+                },
+            },
+        },
+    );
+
+    const onRemoveLocalStudent = useCallback((student: Participant) => {
+        Alert.alert(
+            i18n.t("remove_local_student"),
+            i18n.t("remove_local_student_confirm", {name: student.name}),
+            [
+                {text: i18n.t("cancel"), style: "cancel"},
+                {
+                    text: i18n.t("remove"),
+                    style: "destructive",
+                    onPress: () => removeLocalStudentApi.execute({classroomId, studentId: student.id.toString()}),
+                },
+            ],
+        );
+    }, [removeLocalStudentApi, classroomId]);
+
+    // Телефон передають учню: далі застосунок працює від його імені,
+    // повернутися до вчителя — кнопкою «Вийти» на плашці зверху.
+    const onStartStudentMode = useCallback(async (student: Participant) => {
+        await startStudentMode(student);
+        router.dismissAll();
+        router.replace("/");
+    }, [startStudentMode, router]);
 
     const invokeFetchClassroom = useCallback(() => {
         fetchClassroomApi.execute(classroomId);
@@ -376,9 +418,23 @@ const ClassroomScreen = () => {
 
                         {isTeacher && (
                             <YStack gap={12}>
-                                <CustomText size="h5Medium" color="$gray-20" paddingLeft={4}>
-                                    {i18n.t("classroom_students", {count: classroom.students.length})}
-                                </CustomText>
+                                <XStack justifyContent="space-between" alignItems="center" paddingLeft={4}>
+                                    <CustomText size="h5Medium" color="$gray-20">
+                                        {i18n.t("classroom_students", {count: classroom.students.length})}
+                                    </CustomText>
+                                    <XStack
+                                        alignItems="center"
+                                        gap={4}
+                                        pressStyle={{opacity: 0.6}}
+                                        onPress={() => setIsAddStudentModalOpen(true)}
+                                        hitSlop={8}
+                                    >
+                                        <Feather name="user-plus" size={16} color="#CB5A2E"/>
+                                        <CustomText size="p2Medium" color="#CB5A2E">
+                                            {i18n.t("add_local_student")}
+                                        </CustomText>
+                                    </XStack>
+                                </XStack>
                                 {classroom.students.length === 0 && (
                                     <CustomText size="p2Regular" color="$gray-40" paddingLeft={4}>
                                         {i18n.t("classroom_no_students")}
@@ -390,6 +446,32 @@ const ClassroomScreen = () => {
                                             key={student.id}
                                             participant={student}
                                             onPress={() => router.navigate(`/participant/${student.id}`)}
+                                            rightElement={student.local ? (
+                                                <XStack alignItems="center" gap={14}>
+                                                    <XStack
+                                                        pressStyle={{opacity: 0.6}}
+                                                        onPress={() => onRemoveLocalStudent(student)}
+                                                        hitSlop={8}
+                                                    >
+                                                        <Feather name="user-x" size={16} color="#C1443A"/>
+                                                    </XStack>
+                                                    <XStack
+                                                        backgroundColor="#CB5A2E"
+                                                        paddingHorizontal={12}
+                                                        paddingVertical={6}
+                                                        borderRadius={999}
+                                                        alignItems="center"
+                                                        gap={4}
+                                                        pressStyle={{opacity: 0.7}}
+                                                        onPress={() => onStartStudentMode(student)}
+                                                    >
+                                                        <Feather name="book-open" size={14} color="#FFFFFF"/>
+                                                        <CustomText size="p3Medium" color="#FFFFFF">
+                                                            {i18n.t("student_mode_start")}
+                                                        </CustomText>
+                                                    </XStack>
+                                                </XStack>
+                                            ) : undefined}
                                         />
                                     ))}
                                 </YStack>
@@ -511,6 +593,12 @@ const ClassroomScreen = () => {
                         onClose={() => setIsEditModalOpen(false)}
                         onSave={invokeFetchClassroom}
                         classroom={classroom}
+                    />
+                    <AddLocalStudentModal
+                        isOpen={isAddStudentModalOpen}
+                        onClose={() => setIsAddStudentModalOpen(false)}
+                        onSave={setClassroom}
+                        classroomId={classroom.id}
                     />
                     <CreateReadingModal
                         isOpen={isCreateReadingModalOpen}

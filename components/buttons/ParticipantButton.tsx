@@ -1,18 +1,21 @@
 import React, {FC, useMemo} from "react";
-import {GetProps, ThemeableStack, View, XStack} from "tamagui";
+import {GetProps, ThemeableStack, View, XStack, YStack} from "tamagui";
 import Feather from "@expo/vector-icons/Feather";
 
 import {CustomText} from "@/components/CustomText";
 import {Participant} from "@/types/Paticipant";
 import {getAvatarColor, getInitial} from "@/constants/avatarPalette";
+import i18n from "@/localization/i18n";
 
 type Props = {
     participant: Participant;
     onPress?: () => void;
     disabled?: boolean;
+    // Замість стрілки праворуч (напр. дії з локальним учнем).
+    rightElement?: React.ReactNode;
 } & GetProps<typeof ThemeableStack>;
 
-const ParticipantButton: FC<Props> = ({participant, onPress, disabled = false, ...props}) => {
+const ParticipantButton: FC<Props> = ({participant, onPress, disabled = false, rightElement, ...props}) => {
     const themeColor = useMemo(() => getAvatarColor(participant.name), [participant.name]);
     const initial = useMemo(() => getInitial(participant.name), [participant.name]);
 
@@ -59,11 +62,18 @@ const ParticipantButton: FC<Props> = ({participant, onPress, disabled = false, .
                             {initial}
                         </CustomText>
                     </View>
-                    <CustomText size="h5Medium" color="$gray-20" numberOfLines={1} flex={1}>
-                        {participant.name}
-                    </CustomText>
+                    <YStack flex={1}>
+                        <CustomText size="h5Medium" color="$gray-20" numberOfLines={1}>
+                            {participant.name}
+                        </CustomText>
+                        {participant.local && (
+                            <CustomText size="p3Regular" color="$gray-40">
+                                {i18n.t("local_student_badge")}
+                            </CustomText>
+                        )}
+                    </YStack>
                 </XStack>
-                <Feather name="chevron-right" size={16} color="#A68A63" />
+                {rightElement ?? <Feather name="chevron-right" size={16} color="#A68A63" />}
             </XStack>
         </ThemeableStack>
     );

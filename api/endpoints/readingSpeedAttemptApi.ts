@@ -1,5 +1,5 @@
 import apiRequest, {ApiResponse, getApiBaseUrl} from "@/api";
-import {getAccessToken} from "@/auth/supabase";
+import {getAuthHeaders} from "@/auth/actingStudent";
 import {ReadingSpeedAttempt} from "@/types/ReadingSpeed";
 
 const readingSpeedAttemptApi = {
@@ -59,10 +59,9 @@ const readingSpeedAttemptApi = {
     // — саме так передаємо Bearer-токен на захищений ендпоінт, окремого
     // публічного/підписаного URL на аудіо немає.
     getAudioSource: async (id: number): Promise<{ uri: string; headers: Record<string, string> }> => {
-        const token = await getAccessToken();
         return {
             uri: `${getApiBaseUrl()}/api/reading-speed-attempts/${id}/audio`,
-            headers: token ? {Authorization: `Bearer ${token}`} : {},
+            headers: await getAuthHeaders(),
         };
     },
 };

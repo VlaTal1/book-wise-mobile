@@ -8,4 +8,6 @@ export type Participant = {
     role: UserRole;
     classroomId: number | null;
     classroomName: string | null;
+    // Локальний учень (без акаунта) — читає з телефона вчителя.
+    local?: boolean;
 }

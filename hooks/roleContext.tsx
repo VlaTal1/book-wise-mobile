@@ -3,6 +3,7 @@ import React, {createContext, ReactNode, useCallback, useContext, useEffect, use
 import {useAuth} from "@/auth/SupabaseAuthProvider";
 import participantApi from "@/api/endpoints/participantApi";
 import {ApiErrorCode} from "@/api";
+import {setActingStudentId} from "@/auth/actingStudent";
 import {Participant, UserRole} from "@/types/Paticipant";
 
 interface RoleContextType {
@@ -16,6 +17,11 @@ interface RoleContextType {
     isLoading: boolean;
     createProfile: (name: string, role: UserRole) => Promise<boolean>;
     refreshProfile: () => Promise<void>;
+    // Режим учня на телефоні вчителя: застосунок працює від імені локального
+    // учня (profile — його профіль), поки вчитель не вийде з режиму.
+    actingStudent: Participant | null;
+    startStudentMode: (student: Participant) => Promise<void>;
+    exitStudentMode: () => Promise<void>;
 }
 
 const defaultContextValue: RoleContextType = {
@@ -27,6 +33,9 @@ const defaultContextValue: RoleContextType = {
     isLoading: true,
     createProfile: async () => false,
     refreshProfile: async () => {},
+    actingStudent: null,
+    startStudentMode: async () => {},
+    exitStudentMode: async () => {},
 };
 
 export const RoleContext = createContext<RoleContextType>(defaultContextValue);
@@ -40,6 +49,7 @@ export const RoleProvider: React.FC<{ children: ReactNode }> = ({children}) => {
     const [profile, setProfile] = useState<Participant | null>(null);
     const [needsOnboarding, setNeedsOnboarding] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const [actingStudent, setActingStudent] = useState<Participant | null>(null);
 
     const refreshProfile = useCallback(async () => {
         if (!userId) {
@@ -75,6 +85,26 @@ export const RoleProvider: React.FC<{ children: ReactNode }> = ({children}) => {
         return true;
     }, []);
 
+    const startStudentMode = useCallback(async (student: Participant) => {
+        setActingStudentId(student.id);
+        setActingStudent(student);
+        await refreshProfile();
+    }, [refreshProfile]);
+
+    const exitStudentMode = useCallback(async () => {
+        setActingStudentId(null);
+        setActingStudent(null);
+        await refreshProfile();
+    }, [refreshProfile]);
+
+    // Вихід з акаунта — і з режиму учня.
+    useEffect(() => {
+        if (!userId) {
+            setActingStudentId(null);
+            setActingStudent(null);
+        }
+    }, [userId]);
+
     const contextValue: RoleContextType = {
         profile,
         isTeacher: profile?.role === "TEACHER",
@@ -84,6 +114,9 @@ export const RoleProvider: React.FC<{ children: ReactNode }> = ({children}) => {
         isLoading,
         createProfile,
         refreshProfile,
+        actingStudent,
+        startStudentMode,
+        exitStudentMode,
     };
 
     return (

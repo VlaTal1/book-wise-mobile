@@ -16,6 +16,12 @@ type Props = {
 export const formatTimeLimit = (seconds: number | null) =>
     seconds === null ? i18n.t("reading_no_time_limit") : i18n.t("minutes_short", {count: Math.round(seconds / 6) / 10});
 
+// «Сторінки 3 - 4 · Слів: 312» або «Випадкові уривки».
+export const formatFragment = (reading: ClassroomReading) =>
+    reading.mode === "RANDOM"
+        ? i18n.t("reading_random_excerpts")
+        : `${i18n.t("pages_range", {start: reading.startPage, end: reading.endPage})} · ${i18n.t("reading_words_count", {count: reading.wordCount ?? 0})}`;
+
 export const formatAttempts = (maxAttempts: number | null) =>
     maxAttempts === null ? i18n.t("reading_attempts_unlimited") : i18n.t("reading_attempts_value", {count: maxAttempts});
 
@@ -43,9 +49,7 @@ const ClassroomReadingCard: FC<Props> = ({reading, onPress, onDelete, disabled =
                 {reading.bookTitle}
             </CustomText>
             <CustomText size="p3Regular" color="$gray-40">
-                {i18n.t("pages_range", {start: reading.startPage, end: reading.endPage})}
-                {" · "}
-                {i18n.t("reading_words_count", {count: reading.wordCount})}
+                {formatFragment(reading)}
             </CustomText>
             <CustomText size="p3Regular" color="$gray-40">
                 {formatTimeLimit(reading.timeLimitSeconds)}
@@ -53,9 +57,11 @@ const ClassroomReadingCard: FC<Props> = ({reading, onPress, onDelete, disabled =
                 {formatAttempts(reading.maxAttempts)}
             </CustomText>
         </YStack>
-        <CustomText size="p2Regular" color="$gray-40" numberOfLines={2} fontStyle="italic">
-            {reading.preview}
-        </CustomText>
+        {reading.preview && (
+            <CustomText size="p2Regular" color="$gray-40" numberOfLines={2} fontStyle="italic">
+                {reading.preview}
+            </CustomText>
+        )}
         <XStack
             justifyContent="space-between"
             alignItems="center"

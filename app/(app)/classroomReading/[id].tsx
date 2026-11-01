@@ -9,7 +9,7 @@ import CustomStackScreen from "@/components/CustomStackScreen";
 import Header from "@/components/Header";
 import HeaderButton from "@/components/buttons/HeaderButton";
 import {CustomText} from "@/components/CustomText";
-import {formatAttempts, formatTimeLimit} from "@/components/buttons/ClassroomReadingCard";
+import {formatAttempts, formatFragment, formatTimeLimit} from "@/components/buttons/ClassroomReadingCard";
 import i18n from "@/localization/i18n";
 import useApi from "@/hooks/useApi";
 import classroomReadingApi from "@/api/endpoints/classroomReadingApi";
@@ -175,18 +175,18 @@ const ClassroomReadingResultsScreen = () => {
                                     {reading.bookTitle}
                                 </CustomText>
                                 <CustomText size="p2Regular" color="$gray-40">
-                                    {i18n.t("pages_range", {start: reading.startPage, end: reading.endPage})}
-                                    {" · "}
-                                    {i18n.t("reading_words_count", {count: reading.wordCount})}
+                                    {formatFragment(reading)}
                                 </CustomText>
                                 <CustomText size="p2Regular" color="$gray-40">
                                     {formatTimeLimit(reading.timeLimitSeconds)}
                                     {" · "}
                                     {formatAttempts(reading.maxAttempts)}
                                 </CustomText>
-                                <CustomText size="p2Regular" color="$gray-40" fontStyle="italic" numberOfLines={3}>
-                                    {reading.preview}
-                                </CustomText>
+                                {reading.preview && (
+                                    <CustomText size="p2Regular" color="$gray-40" fontStyle="italic" numberOfLines={3}>
+                                        {reading.preview}
+                                    </CustomText>
+                                )}
                             </YStack>
 
                             <YStack gap={8}>

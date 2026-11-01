@@ -14,7 +14,7 @@ import PrimaryButton from "@/components/buttons/PrimaryButton";
 import {CustomText} from "@/components/CustomText";
 import BackIcon from "@/assets/images/icons/back-icon.svg";
 import NextIcon from "@/assets/images/icons/next-icon.svg";
-import {getAccessToken} from "@/auth/supabase";
+import {getAuthHeaders} from "@/auth/actingStudent";
 import {getApiBaseUrl} from "@/api";
 import BottomButtonGroup from "@/components/buttons/BottomButtonGroup";
 import {useRole} from "@/hooks/roleContext";
@@ -92,7 +92,7 @@ const Reader = () => {
     const downloadBook = async (bookId: string) => {
         try {
             setPdfState(prev => ({...prev, isLoading: true}));
-            const accessToken = await getAccessToken();
+            const headers = await getAuthHeaders();
             const apiBaseUrl = getApiBaseUrl()
 
             const fileUri = `${FileSystem.cacheDirectory}book_${bookId}.pdf`;
@@ -101,9 +101,7 @@ const Reader = () => {
                 `${apiBaseUrl}/api/books/${bookId}/download`,
                 fileUri,
                 {
-                    headers: {
-                        "Authorization": `Bearer ${accessToken}`,
-                    },
+                    headers,
                 },
             );
 

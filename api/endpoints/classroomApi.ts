@@ -74,6 +74,33 @@ const classroomApi = {
             },
         });
     },
+    // Локальний учень без акаунта — читає з телефона вчителя.
+    createLocalStudent: async ({classroomId, name}: {
+        classroomId: string;
+        name: string;
+    }): Promise<ApiResponse<ClassroomDetails>> => {
+        return apiRequest<ClassroomDetails>({
+            path: `/api/classrooms/${classroomId}/local-students`,
+            method: "POST",
+            body: {name},
+            headers: {
+                "Accept": "application/json",
+            },
+        });
+    },
+    // Учня прибирають з класу; його спроби й тести лишаються в історії.
+    removeLocalStudent: async ({classroomId, studentId}: {
+        classroomId: string;
+        studentId: string;
+    }): Promise<ApiResponse<ClassroomDetails>> => {
+        return apiRequest<ClassroomDetails>({
+            path: `/api/classrooms/${classroomId}/local-students/${studentId}`,
+            method: "DELETE",
+            headers: {
+                "Accept": "application/json",
+            },
+        });
+    },
     regenerateTest: async ({classroomId, classroomTestId}: {
         classroomId: string;
         classroomTestId: string;

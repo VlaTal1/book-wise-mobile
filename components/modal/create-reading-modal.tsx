@@ -14,6 +14,7 @@ import classroomReadingApi from "@/api/endpoints/classroomReadingApi";
 import BookSelectModal from "@/components/modal/book-select-modal";
 import {CustomText} from "@/components/CustomText";
 import {Book} from "@/types/Book";
+import {ReadingMode} from "@/types/ClassroomReading";
 import NextIcon from "@/assets/images/icons/next-icon.svg";
 
 type Props = {
@@ -56,6 +57,7 @@ const Chip: FC<{label: string; selected: boolean; onPress: () => void}> = ({labe
 const CreateReadingModal: FC<Props> = ({onClose, isOpen, onSave, classroomId, classroomName, books}) => {
     const {keyboardVisible, availableContentHeight} = useWindow();
 
+    const [mode, setMode] = useState<ReadingMode>("FIXED");
     const [selectedBook, setSelectedBook] = useState<Book | undefined>(undefined);
     const [isBookSelectModalOpen, setIsBookSelectModalOpen] = useState(false);
     const [startPage, setStartPage] = useState("1");
@@ -77,6 +79,7 @@ const CreateReadingModal: FC<Props> = ({onClose, isOpen, onSave, classroomId, cl
 
     const onCancel = useCallback(() => {
         onClose();
+        setMode("FIXED");
         setSelectedBook(undefined);
         setStartPage("1");
         setEndPage("1");
@@ -156,7 +159,7 @@ const CreateReadingModal: FC<Props> = ({onClose, isOpen, onSave, classroomId, cl
         return countWords(paragraphs.slice(startParagraph, end + 1).join(" "));
     }, [paragraphs, startParagraph, endParagraph]);
 
-    const isValid = selectedBook !== undefined
+    const isValid = mode === "RANDOM" ? selectedBook !== undefined : selectedBook !== undefined
         && paragraphs !== null
         && startParagraph !== null
         && endParagraph !== null
@@ -164,12 +167,23 @@ const CreateReadingModal: FC<Props> = ({onClose, isOpen, onSave, classroomId, cl
         && selectedWords <= MAX_WORDS;
 
     const handleSave = useCallback(() => {
-        if (!isValid || !selectedBook || startParagraph === null || endParagraph === null) {
+        if (!isValid || !selectedBook) {
+            return;
+        }
+        if (mode === "RANDOM") {
+            createReadingApi.execute({
+                classroomId: classroomId.toString(),
+                reading: {mode, bookId: selectedBook.id, timeLimitSeconds, maxAttempts},
+            });
+            return;
+        }
+        if (startParagraph === null || endParagraph === null) {
             return;
         }
         createReadingApi.execute({
             classroomId: classroomId.toString(),
             reading: {
+                mode,
                 bookId: selectedBook.id,
                 startPage: Number(startPage),
                 endPage: Number(endPage),
@@ -179,7 +193,7 @@ const CreateReadingModal: FC<Props> = ({onClose, isOpen, onSave, classroomId, cl
                 maxAttempts,
             },
         });
-    }, [isValid, selectedBook, startParagraph, endParagraph, createReadingApi, classroomId, startPage, endPage, timeLimitSeconds, maxAttempts]);
+    }, [isValid, mode, selectedBook, startParagraph, endParagraph, createReadingApi, classroomId, startPage, endPage, timeLimitSeconds, maxAttempts]);
 
     const isInRange = (index: number) => {
         if (startParagraph === null) {
@@ -216,6 +230,11 @@ const CreateReadingModal: FC<Props> = ({onClose, isOpen, onSave, classroomId, cl
             >
                 <ScrollView contentContainerStyle={{flexGrow: 1, paddingBottom: 24}}>
                     <YStack gap={12}>
+                        <XStack gap={6} flexWrap="wrap">
+                            <Chip label={i18n.t("reading_mode_fixed")} selected={mode === "FIXED"} onPress={() => setMode("FIXED")}/>
+                            <Chip label={i18n.t("reading_mode_random")} selected={mode === "RANDOM"} onPress={() => setMode("RANDOM")}/>
+                        </XStack>
+
                         <LabelledInput label={i18n.t("book")} htmlFor="readingBook">
                             <TouchableOpacity onPress={() => setIsBookSelectModalOpen(true)} activeOpacity={0.7}>
                                 <Input
@@ -228,6 +247,13 @@ const CreateReadingModal: FC<Props> = ({onClose, isOpen, onSave, classroomId, cl
                             </TouchableOpacity>
                         </LabelledInput>
 
+                        {mode === "RANDOM" && (
+                            <CustomText size="p2Regular" color="$gray-40">
+                                {i18n.t("reading_mode_random_hint")}
+                            </CustomText>
+                        )}
+
+                        {mode === "FIXED" && (<>
                         <XStack gap={8}>
                             <LabelledInput label={i18n.t("start_page")} htmlFor="readingStartPage" flex={1}>
                                 <Input
@@ -312,6 +338,7 @@ const CreateReadingModal: FC<Props> = ({onClose, isOpen, onSave, classroomId, cl
                                 </YStack>
                             )
                         )}
+                        </>)}
 
                         <YStack gap={8}>
                             <CustomText size="p2Regular" color="$gray-20">

@@ -3,7 +3,7 @@ import {XStack, YStack} from "tamagui";
 
 import {CustomText} from "@/components/CustomText";
 import PrimaryButton from "@/components/buttons/PrimaryButton";
-import {formatTimeLimit} from "@/components/buttons/ClassroomReadingCard";
+import {formatFragment, formatTimeLimit} from "@/components/buttons/ClassroomReadingCard";
 import i18n from "@/localization/i18n";
 import {ClassroomReading} from "@/types/ClassroomReading";
 
@@ -33,16 +33,16 @@ export const StudentReadingCard: FC<Props> = ({reading, onStart}) => {
                     {reading.bookTitle}
                 </CustomText>
                 <CustomText size="p3Regular" color="$gray-40">
-                    {i18n.t("pages_range", {start: reading.startPage, end: reading.endPage})}
-                    {" · "}
-                    {i18n.t("reading_words_count", {count: reading.wordCount})}
+                    {formatFragment(reading)}
                     {" · "}
                     {reading.timeLimitSeconds === null ? i18n.t("reading_no_time_limit_hint") : formatTimeLimit(reading.timeLimitSeconds)}
                 </CustomText>
             </YStack>
-            <CustomText size="p2Regular" color="$gray-40" fontStyle="italic" numberOfLines={2}>
-                {reading.preview}
-            </CustomText>
+            {reading.preview && (
+                <CustomText size="p2Regular" color="$gray-40" fontStyle="italic" numberOfLines={2}>
+                    {reading.preview}
+                </CustomText>
+            )}
             <XStack justifyContent="space-between" alignItems="center" gap={8}>
                 <YStack flex={1} gap={2}>
                     <CustomText size="p2Regular" color={exhausted ? "$error-primary" : "$gray-40"}>

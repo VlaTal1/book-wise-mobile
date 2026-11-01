@@ -10,6 +10,7 @@ import PrimaryButton from "@/components/buttons/PrimaryButton";
 import {CustomText} from "@/components/CustomText";
 import i18n from "@/localization/i18n";
 import {useRole} from "@/hooks/roleContext";
+import StudentModeBanner from "@/components/StudentModeBanner";
 
 
 export default function App() {
@@ -65,6 +66,9 @@ export default function App() {
     }
 
     return (
-        <Stack/>
+        <YStack flex={1}>
+            <StudentModeBanner/>
+            <Stack/>
+        </YStack>
     );
 }

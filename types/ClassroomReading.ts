@@ -1,14 +1,19 @@
 // Фрагмент книги для читання на швидкість, призначений вчителем класу.
 // null у timeLimitSeconds / maxAttempts — без обмежень.
+// FIXED — фрагмент, обраний вчителем; RANDOM — щоразу випадковий уривок з книги.
+export type ReadingMode = "FIXED" | "RANDOM";
+
 export type ClassroomReading = {
     id: number;
     classroomId: number;
+    mode: ReadingMode;
     bookId: number;
     bookTitle: string;
-    startPage: number;
-    endPage: number;
-    wordCount: number;
-    preview: string;
+    // Сторінки, обсяг і початок тексту — лише для FIXED.
+    startPage: number | null;
+    endPage: number | null;
+    wordCount: number | null;
+    preview: string | null;
     timeLimitSeconds: number | null;
     maxAttempts: number | null;
     // Лише для вчителя (сторінка класу).
@@ -20,11 +25,12 @@ export type ClassroomReading = {
 }
 
 export type ClassroomReadingRequest = {
+    mode: ReadingMode;
     bookId: number;
-    startPage: number;
-    endPage: number;
-    startParagraph: number;
-    endParagraph: number;
+    startPage?: number;
+    endPage?: number;
+    startParagraph?: number;
+    endParagraph?: number;
     timeLimitSeconds: number | null;
     maxAttempts: number | null;
 }

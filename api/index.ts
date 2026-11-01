@@ -1,6 +1,7 @@
 import Constants from "expo-constants";
 
 import {getAccessToken} from "@/auth/supabase";
+import {ACT_AS_HEADER, getActingStudentId} from "@/auth/actingStudent";
 import {returnSuccessData} from "@/api/apiHelpers";
 
 const logEvent = (event: string, details?: unknown) => {
@@ -324,6 +325,11 @@ const apiRequest = async <T>(config: RequestConfig): Promise<ApiResponse<T>> => 
             }
 
             requestHeaders["Authorization"] = `Bearer ${authToken}`;
+            // Режим учня на телефоні вчителя (локальний учень без акаунта).
+            const actingStudentId = getActingStudentId();
+            if (actingStudentId !== null) {
+                requestHeaders[ACT_AS_HEADER] = actingStudentId.toString();
+            }
             console.log("[API DEBUG] ✅ Token set for:", path, "| length:", authToken.length);
         } else {
             console.log("[API DEBUG] accessToken=false for:", path);
