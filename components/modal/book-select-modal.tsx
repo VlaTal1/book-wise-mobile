@@ -1,5 +1,5 @@
-import React, {FC, useCallback, useEffect, useState} from "react";
-import {XStack} from "tamagui";
+import React, {FC, useCallback, useEffect, useMemo, useState} from "react";
+import {XStack, YStack} from "tamagui";
 import {ActivityIndicator} from "react-native";
 
 import i18n from "@/localization/i18n";
@@ -10,7 +10,8 @@ import useApi from "@/hooks/useApi";
 import ListButton from "@/components/buttons/ListButton";
 import ArrowRightIcon from "@/assets/images/icons/next-icon.svg";
 import bookApi from "@/api/endpoints/bookApi";
-import {Book} from "@/types/Book";
+import {Book, CatalogBook} from "@/types/Book";
+import {CustomText} from "@/components/CustomText";
 
 type Props = {
     onClose: () => void;
@@ -19,12 +20,15 @@ type Props = {
     onSelectBook?: (book: Book) => void;
     // Якщо передано — показуємо лише ці книги (напр. книги класу) замість усіх книг вчителя.
     books?: Book[];
+    // Показати також предзаготовлені книги з каталогу застосунку.
+    showCatalog?: boolean;
 }
 
-const BookSelectModal: FC<Props> = ({onClose, isOpen, onSelectId, onSelectBook, books: providedBooks}) => {
+const BookSelectModal: FC<Props> = ({onClose, isOpen, onSelectId, onSelectBook, books: providedBooks, showCatalog = false}) => {
     const {keyboardVisible, availableContentHeight} = useWindow()
 
     const [books, setBooks] = useState<Book[]>([]);
+    const [catalog, setCatalog] = useState<CatalogBook[]>([]);
 
     const fetchBooksApi = useApi(
         bookApi.fetchBooks,
@@ -46,19 +50,22 @@ const BookSelectModal: FC<Props> = ({onClose, isOpen, onSelectId, onSelectBook, 
         },
     );
 
-    const invokeFetchBooks = useCallback(() => {
-        fetchBooksApi.execute();
-    }, []);
-
-    useEffect(() => {
-        if (isOpen && !providedBooks) {
-            invokeFetchBooks()
-        }
-    }, [isOpen]);
-
-    const onCancel = useCallback(() => {
-        onClose();
-    }, [onClose]);
+    const fetchCatalogApi = useApi(
+        bookApi.fetchCatalog,
+        {
+            onSuccess: (data) => {
+                setCatalog(data);
+            },
+            errorHandler: {
+                title: i18n.t("error"),
+                message: `${i18n.t("failed_to_fetch_books")}\n${i18n.t("please_try_again_later")}`,
+                options: {
+                    tryAgain: true,
+                    cancel: true,
+                },
+            },
+        },
+    );
 
     const handleSelect = useCallback(async (book: Book) => {
         if (onSelectId) {
@@ -69,6 +76,49 @@ const BookSelectModal: FC<Props> = ({onClose, isOpen, onSelectId, onSelectBook, 
         }
         onClose()
     }, [onClose, onSelectBook, onSelectId]);
+
+    const addCatalogBookApi = useApi(
+        bookApi.addCatalogBook,
+        {
+            // Книга з каталогу вже додана до бібліотеки вчителя — далі як звичайна книга.
+            onSuccess: (book) => {
+                handleSelect(book);
+            },
+            errorHandler: {
+                title: i18n.t("error"),
+                message: `${i18n.t("failed_to_add_catalog_book")}\n${i18n.t("please_try_again_later")}`,
+                options: {
+                    cancel: true,
+                },
+            },
+        },
+    );
+
+    useEffect(() => {
+        if (!isOpen) {
+            return;
+        }
+        if (!providedBooks) {
+            fetchBooksApi.execute();
+        }
+        if (showCatalog) {
+            fetchCatalogApi.execute();
+        }
+    }, [isOpen]);
+
+    const onCancel = useCallback(() => {
+        onClose();
+    }, [onClose]);
+
+    const ownBooks = providedBooks ?? books;
+
+    // Каталожні книги, які вчитель уже додав, і так є серед «Моїх книг».
+    const availableCatalog = useMemo(() => {
+        const addedKeys = new Set(ownBooks.map((book) => book.catalogKey).filter(Boolean));
+        return catalog.filter((book) => !addedKeys.has(book.key));
+    }, [catalog, ownBooks]);
+
+    const isLoading = fetchBooksApi.loading || (showCatalog && fetchCatalogApi.loading);
 
     return (
         <Modal
@@ -87,17 +137,46 @@ const BookSelectModal: FC<Props> = ({onClose, isOpen, onSelectId, onSelectBook, 
             isKeyboardVisible={keyboardVisible}
             height={availableContentHeight}
         >
-            {fetchBooksApi.loading || !books ? (
+            {isLoading ? (
                 <ActivityIndicator size="small" color="#CB5A2E"/>
             ) : (
-                (providedBooks ?? books).map((book) => (
-                    <ListButton
-                        key={book.id}
-                        onPress={() => handleSelect(book)}
-                        text={book.title}
-                        icon={ArrowRightIcon}
-                    />
-                ))
+                <YStack>
+                    {showCatalog && ownBooks.length > 0 && (
+                        <CustomText size="h5Medium" color="$gray-20" paddingTop={8}>
+                            {i18n.t("my_books")}
+                        </CustomText>
+                    )}
+                    {ownBooks.map((book) => (
+                        <ListButton
+                            key={book.id}
+                            onPress={() => handleSelect(book)}
+                            text={book.title}
+                            icon={ArrowRightIcon}
+                        />
+                    ))}
+
+                    {showCatalog && availableCatalog.length > 0 && (
+                        <>
+                            <CustomText size="h5Medium" color="$gray-20" paddingTop={16}>
+                                {i18n.t("book_catalog")}
+                            </CustomText>
+                            {availableCatalog.map((book) => (
+                                <ListButton
+                                    key={book.key}
+                                    onPress={() => addCatalogBookApi.execute(book.key)}
+                                    disabled={addCatalogBookApi.loading}
+                                    text={`${book.title} — ${book.author}`}
+                                    icon={ArrowRightIcon}
+                                    rightPart={book.grade ? (
+                                        <CustomText size="p2Regular" color="$gray-40">
+                                            {i18n.t("catalog_book_grade", {grade: book.grade})}
+                                        </CustomText>
+                                    ) : undefined}
+                                />
+                            ))}
+                        </>
+                    )}
+                </YStack>
             )}
         </Modal>
     )

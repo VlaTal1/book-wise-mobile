@@ -435,6 +435,7 @@ const ClassroomScreen = () => {
                         isOpen={isBookSelectModalOpen}
                         onClose={() => setIsBookSelectModalOpen(false)}
                         onSelectBook={handleBookSelect}
+                        showCatalog
                     />
                     <CreateClassroomModal
                         isOpen={isEditModalOpen}
