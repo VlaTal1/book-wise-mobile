@@ -23,7 +23,7 @@ type Props = {
 // Учень без реєстрації: вчитель лише вводить ім'я, далі учень читає з
 // телефона вчителя (кнопка «Читати» біля учня на сторінці класу).
 const AddLocalStudentModal: FC<Props> = ({isOpen, onClose, onSave, classroomId}) => {
-    const {keyboardVisible} = useWindow();
+    const {keyboardVisible, availableContentHeight} = useWindow();
     const [name, setName] = useState("");
 
     const onCancel = useCallback(() => {
@@ -71,6 +71,7 @@ const AddLocalStudentModal: FC<Props> = ({isOpen, onClose, onSave, classroomId})
                 </XStack>
             )}
             isKeyboardVisible={keyboardVisible}
+            height={availableContentHeight}
         >
             <YStack gap={12}>
                 <CustomText size="p2Regular" color="$gray-40">

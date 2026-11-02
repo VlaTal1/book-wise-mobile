@@ -205,10 +205,12 @@ const ClassroomScreen = () => {
 
     // Телефон передають учню: далі застосунок працює від його імені,
     // повернутися до вчителя — кнопкою «Вийти» на плашці зверху.
+    // Одна навігаційна дія (повернення на головну), і вже потім зміна
+    // профілю: dismissAll + replace підряд під час перебудови дерева
+    // падали на Android (Fabric: "The specified child already has a parent").
     const onStartStudentMode = useCallback(async (student: Participant) => {
+        router.dismissTo("/");
         await startStudentMode(student);
-        router.dismissAll();
-        router.replace("/");
     }, [startStudentMode, router]);
 
     const invokeFetchClassroom = useCallback(() => {

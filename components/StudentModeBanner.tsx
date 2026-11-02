@@ -26,10 +26,12 @@ const StudentModeBanner = () => {
                 {text: i18n.t("cancel"), style: "cancel"},
                 {
                     text: i18n.t("student_mode_exit"),
+                    // Спершу на головну (екрани учня закриваються ще з його
+                    // профілем), потім повернення профілю вчителя — див.
+                    // onStartStudentMode у classroom/[id].tsx.
                     onPress: async () => {
+                        router.dismissTo("/");
                         await exitStudentMode();
-                        router.dismissAll();
-                        router.replace("/");
                     },
                 },
             ],
