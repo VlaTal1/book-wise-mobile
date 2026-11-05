@@ -5,7 +5,6 @@ import {ActivityIndicator} from "react-native";
 import i18n from "@/localization/i18n";
 import Modal from "@/components/modal/index";
 import SecondaryButton from "@/components/buttons/SecondaryButton";
-import useWindow from "@/hooks/useWindow";
 import DiscardBookAddingModal from "@/components/modal/discard/discard-book-adding-modal";
 import useApi from "@/hooks/useApi";
 import classroomApi from "@/api/endpoints/classroomApi";
@@ -21,7 +20,6 @@ type Props = {
 }
 
 const ClassroomSelectModal: FC<Props> = ({onClose, isOpen, onSelectId, onSelectClassroom}) => {
-    const {keyboardVisible, availableContentHeight} = useWindow()
 
     const [isDiscardModalOpen, setIsDiscardModalOpen] = useState(false)
     const [classrooms, setClassrooms] = useState<Classroom[]>([]);
@@ -85,8 +83,6 @@ const ClassroomSelectModal: FC<Props> = ({onClose, isOpen, onSelectId, onSelectC
                         />
                     </XStack>
                 )}
-                isKeyboardVisible={keyboardVisible}
-                height={availableContentHeight}
             >
                 {fetchClassroomsApi.loading || !classrooms ? (
                     <ActivityIndicator size="small" color="#CB5A2E"/>

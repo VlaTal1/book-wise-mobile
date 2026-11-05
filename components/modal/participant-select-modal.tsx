@@ -5,7 +5,6 @@ import {ActivityIndicator} from "react-native";
 import i18n from "@/localization/i18n";
 import Modal from "@/components/modal/index";
 import SecondaryButton from "@/components/buttons/SecondaryButton";
-import useWindow from "@/hooks/useWindow";
 import DiscardBookAddingModal from "@/components/modal/discard/discard-book-adding-modal";
 import useApi from "@/hooks/useApi";
 import participantApi from "@/api/endpoints/participantApi";
@@ -21,7 +20,6 @@ type Props = {
 }
 
 const ParticipantSelectModal: FC<Props> = ({onClose, isOpen, onSelectId, onSelectParticipant}) => {
-    const {keyboardVisible, availableContentHeight} = useWindow()
 
     const [isDiscardModalOpen, setIsDiscardModalOpen] = useState(false)
     const [participants, setParticipants] = useState<Participant[]>([]);
@@ -85,8 +83,6 @@ const ParticipantSelectModal: FC<Props> = ({onClose, isOpen, onSelectId, onSelec
                         />
                     </XStack>
                 )}
-                isKeyboardVisible={keyboardVisible}
-                height={availableContentHeight}
             >
                 {fetchAllParticipantApi.loading || !participants ? (
                     <ActivityIndicator size="small" color="#CB5A2E"/>

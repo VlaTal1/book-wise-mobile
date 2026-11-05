@@ -11,7 +11,6 @@ import Modal from "@/components/modal/index";
 import Input from "@/components/input";
 import PrimaryButton from "@/components/buttons/PrimaryButton";
 import SecondaryButton from "@/components/buttons/SecondaryButton";
-import useWindow from "@/hooks/useWindow";
 import LabelledInput from "@/components/LabelledInput";
 import DiscardBookAddingModal from "@/components/modal/discard/discard-book-adding-modal";
 import {CustomText} from "@/components/CustomText";
@@ -31,7 +30,6 @@ type FormValues = {
 };
 
 const AddBookModal: FC<Props> = ({onClose, isOpen, onSave}) => {
-    const {keyboardVisible, availableContentHeight} = useWindow()
 
     const [isDiscardModalOpen, setIsDiscardModalOpen] = useState(false)
     const [selectedFileName, setSelectedFileName] = useState<string>("");
@@ -180,13 +178,11 @@ const AddBookModal: FC<Props> = ({onClose, isOpen, onSave}) => {
                         />
                     </XStack>
                 )}
-                isKeyboardVisible={keyboardVisible}
-                height={availableContentHeight}
             >
                 {uploadBookApi.loading ? (
                     <ActivityIndicator size="small" color="#CB5A2E"/>
                 ) : (
-                    <ScrollView contentContainerStyle={{flexGrow: 1}}>
+                    <ScrollView contentContainerStyle={{flexGrow: 1}} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
                         <YStack gap={12}>
                             {/* Book Name */}
                             <LabelledInput label={i18n.t("name")} htmlFor="name">

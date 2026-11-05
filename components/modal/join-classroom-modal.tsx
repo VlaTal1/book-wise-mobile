@@ -8,7 +8,6 @@ import Modal from "@/components/modal/index";
 import Input from "@/components/input";
 import PrimaryButton from "@/components/buttons/PrimaryButton";
 import SecondaryButton from "@/components/buttons/SecondaryButton";
-import useWindow from "@/hooks/useWindow";
 import LabelledInput from "@/components/LabelledInput";
 import useApi from "@/hooks/useApi";
 import classroomApi from "@/api/endpoints/classroomApi";
@@ -28,7 +27,6 @@ type FormValues = {
 };
 
 const JoinClassroomModal: FC<Props> = ({onClose, isOpen, onSave, hasClassroom = false}) => {
-    const {keyboardVisible, availableContentHeight} = useWindow()
 
     const {control, handleSubmit, setValue, watch, reset, formState: {errors, isDirty}} = useForm<FormValues>({
         defaultValues: {
@@ -97,13 +95,11 @@ const JoinClassroomModal: FC<Props> = ({onClose, isOpen, onSave, hasClassroom = 
                         />
                     </XStack>
                 )}
-                isKeyboardVisible={keyboardVisible}
-                height={availableContentHeight}
             >
                 {saveApi.loading ? (
                     <ActivityIndicator size="small" color="#CB5A2E"/>
                 ) : (
-                    <ScrollView contentContainerStyle={{flexGrow: 1}}>
+                    <ScrollView contentContainerStyle={{flexGrow: 1}} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
                         <YStack gap={12}>
                             <LabelledInput label={i18n.t("classroom_code")} htmlFor="code">
                                 <Controller

@@ -1,6 +1,7 @@
 import React, {useMemo} from "react";
 import {View, YStack, XStack} from "tamagui";
-import {TouchableOpacity, Dimensions} from "react-native";
+import {TouchableOpacity, Dimensions, Platform} from "react-native";
+import {useSafeAreaInsets} from "react-native-safe-area-context";
 import Modal from "react-native-modal";
 import * as Application from "expo-application";
 import Constants from "expo-constants";
@@ -27,6 +28,10 @@ const BurgerMenu: React.FC<Props> = ({isOpen, onClose, onLogout}) => {
     const version = Constants.expoConfig?.version;
     const buildNumber = Application.nativeBuildVersion;
 
+    // Меню (RN Modal) малюється під системними панелями (edge-to-edge),
+    // тож відступаємо від статус-бару зверху й панелі навігації знизу.
+    const insets = useSafeAreaInsets();
+
     const userInitial = useMemo(() => {
         const source = profile?.name || user?.email;
         if (source) {
@@ -48,11 +53,17 @@ const BurgerMenu: React.FC<Props> = ({isOpen, onClose, onLogout}) => {
             swipeDirection="left"
             onSwipeComplete={onClose}
             propagateSwipe={true}
+            statusBarTranslucent
+            // Пропс RN Modal, якого немає в типах react-native-modal (передається далі як є).
+            {...(Platform.OS === "android" ? {navigationBarTranslucent: true} : {})}
+            deviceHeight={Dimensions.get("screen").height}
         >
             <View
                 width={drawerWidth}
                 height="100%"
                 padding={20}
+                paddingTop={20 + insets.top}
+                paddingBottom={20 + insets.bottom}
                 backgroundColor="$gray-100"
                 borderTopRightRadius={32}
                 borderBottomRightRadius={32}

@@ -8,7 +8,6 @@ import PrimaryButton from "@/components/buttons/PrimaryButton";
 import SecondaryButton from "@/components/buttons/SecondaryButton";
 import LabelledInput from "@/components/LabelledInput";
 import {CustomText} from "@/components/CustomText";
-import useWindow from "@/hooks/useWindow";
 import useApi from "@/hooks/useApi";
 import classroomApi from "@/api/endpoints/classroomApi";
 import {ClassroomDetails} from "@/types/Classroom";
@@ -23,7 +22,6 @@ type Props = {
 // Учень без реєстрації: вчитель лише вводить ім'я, далі учень читає з
 // телефона вчителя (кнопка «Читати» біля учня на сторінці класу).
 const AddLocalStudentModal: FC<Props> = ({isOpen, onClose, onSave, classroomId}) => {
-    const {keyboardVisible, availableContentHeight} = useWindow();
     const [name, setName] = useState("");
 
     const onCancel = useCallback(() => {
@@ -70,8 +68,6 @@ const AddLocalStudentModal: FC<Props> = ({isOpen, onClose, onSave, classroomId})
                     />
                 </XStack>
             )}
-            isKeyboardVisible={keyboardVisible}
-            height={availableContentHeight}
         >
             <YStack gap={12}>
                 <CustomText size="p2Regular" color="$gray-40">

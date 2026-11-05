@@ -5,7 +5,6 @@ import {ActivityIndicator} from "react-native";
 import i18n from "@/localization/i18n";
 import Modal from "@/components/modal/index";
 import SecondaryButton from "@/components/buttons/SecondaryButton";
-import useWindow from "@/hooks/useWindow";
 import useApi from "@/hooks/useApi";
 import ListButton from "@/components/buttons/ListButton";
 import ArrowRightIcon from "@/assets/images/icons/next-icon.svg";
@@ -25,7 +24,6 @@ type Props = {
 }
 
 const BookSelectModal: FC<Props> = ({onClose, isOpen, onSelectId, onSelectBook, books: providedBooks, showCatalog = false}) => {
-    const {keyboardVisible, availableContentHeight} = useWindow()
 
     const [books, setBooks] = useState<Book[]>([]);
     const [catalog, setCatalog] = useState<CatalogBook[]>([]);
@@ -134,8 +132,6 @@ const BookSelectModal: FC<Props> = ({onClose, isOpen, onSelectId, onSelectBook, 
                     />
                 </XStack>
             )}
-            isKeyboardVisible={keyboardVisible}
-            height={availableContentHeight}
         >
             {isLoading ? (
                 <ActivityIndicator size="small" color="#CB5A2E"/>

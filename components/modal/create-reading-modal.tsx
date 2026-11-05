@@ -7,7 +7,6 @@ import Modal from "@/components/modal/index";
 import Input from "@/components/input";
 import PrimaryButton from "@/components/buttons/PrimaryButton";
 import SecondaryButton from "@/components/buttons/SecondaryButton";
-import useWindow from "@/hooks/useWindow";
 import LabelledInput from "@/components/LabelledInput";
 import useApi from "@/hooks/useApi";
 import classroomReadingApi from "@/api/endpoints/classroomReadingApi";
@@ -55,7 +54,6 @@ const Chip: FC<{label: string; selected: boolean; onPress: () => void}> = ({labe
 // Вчитель обирає книгу й сторінки, бачить їх чистий текст абзацами і
 // позначає перший та останній абзац фрагмента; ліміт часу й спроб — чипами.
 const CreateReadingModal: FC<Props> = ({onClose, isOpen, onSave, classroomId, classroomName, books}) => {
-    const {keyboardVisible, availableContentHeight} = useWindow();
 
     const [mode, setMode] = useState<ReadingMode>("FIXED");
     const [selectedBook, setSelectedBook] = useState<Book | undefined>(undefined);
@@ -225,10 +223,8 @@ const CreateReadingModal: FC<Props> = ({onClose, isOpen, onSave, classroomId, cl
                         />
                     </XStack>
                 )}
-                isKeyboardVisible={keyboardVisible}
-                height={availableContentHeight}
             >
-                <ScrollView contentContainerStyle={{flexGrow: 1, paddingBottom: 24}}>
+                <ScrollView contentContainerStyle={{flexGrow: 1, paddingBottom: 24}} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
                     <YStack gap={12}>
                         <XStack gap={6} flexWrap="wrap">
                             <Chip label={i18n.t("reading_mode_fixed")} selected={mode === "FIXED"} onPress={() => setMode("FIXED")}/>

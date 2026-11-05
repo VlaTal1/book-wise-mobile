@@ -8,7 +8,6 @@ import Modal from "@/components/modal/index";
 import Input from "@/components/input";
 import PrimaryButton from "@/components/buttons/PrimaryButton";
 import SecondaryButton from "@/components/buttons/SecondaryButton";
-import useWindow from "@/hooks/useWindow";
 import LabelledInput from "@/components/LabelledInput";
 import useApi from "@/hooks/useApi";
 import classroomApi from "@/api/endpoints/classroomApi";
@@ -34,7 +33,6 @@ type FormValues = {
 };
 
 const CreateTestModal: FC<Props> = ({onClose, isOpen, onSave, classroomId, classroomName, books}) => {
-    const {keyboardVisible, availableContentHeight} = useWindow()
 
     const [selectedBook, setSelectedBook] = useState<Book | undefined>(undefined)
 
@@ -134,13 +132,11 @@ const CreateTestModal: FC<Props> = ({onClose, isOpen, onSave, classroomId, class
                         />
                     </XStack>
                 )}
-                isKeyboardVisible={keyboardVisible}
-                height={availableContentHeight}
             >
                 {createTestApi.loading ? (
                     <ActivityIndicator size="small" color="#CB5A2E"/>
                 ) : (
-                    <ScrollView contentContainerStyle={{flexGrow: 1}}>
+                    <ScrollView contentContainerStyle={{flexGrow: 1}} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
                         <YStack gap={12}>
                             <LabelledInput label={i18n.t("book")} htmlFor="bookName">
                                 <Controller
