@@ -30,9 +30,9 @@ export const WordStatusLegendModal = ({isOpen, onClose}: Props) => {
                 {WORD_STATUS_LEGEND_ORDER.map((status) => (
                     <XStack key={status} alignItems="center" gap={12}>
                         <YStack
-                            width={16}
-                            height={16}
-                            borderRadius={8}
+                            width={28}
+                            height={18}
+                            borderRadius={4}
                             backgroundColor={WORD_STATUS_COLORS[status]}
                         />
                         <CustomText size="p1Regular" color="$gray-20" flex={1}>
@@ -42,9 +42,9 @@ export const WordStatusLegendModal = ({isOpen, onClose}: Props) => {
                 ))}
                 <XStack alignItems="center" gap={12}>
                     <YStack
-                        width={16}
-                        height={16}
-                        borderRadius={8}
+                        width={28}
+                        height={18}
+                        borderRadius={0}
                         backgroundColor="transparent"
                         borderBottomWidth={3}
                         borderColor={STRESS_ERROR_UNDERLINE_COLOR}
