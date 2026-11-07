@@ -63,7 +63,7 @@ const Login = () => {
     const {
         signIn,
         signUp,
-        // signInWithGoogle,
+        signInWithGoogle,
         resetPassword,
         verifyPasswordResetCode,
         updatePassword,
@@ -141,19 +141,16 @@ const Login = () => {
     };
 
     const onGoogleLogin = async () => {
-        // setGoogleLoading(true);
-        // try {
-        //     const {error} = await signInWithGoogle();
-        //     if (error) {
-        //         Alert.alert("Google login error");
-        //     }
-        // } catch (e) {
-        //     console.error(e);
-        //     Alert.alert("Error", "Could not log in with Google");
-        // } finally {
-        //     setGoogleLoading(false);
-        // }
-        Alert.alert(i18n.t("not_implemented"))
+        setGoogleLoading(true);
+        try {
+            const {error, cancelled} = await signInWithGoogle();
+            if (error && !cancelled) {
+                console.error(error);
+                Alert.alert(i18n.t("error"), i18n.t("error_google_login"));
+            }
+        } finally {
+            setGoogleLoading(false);
+        }
     };
 
     // Start forgot password flow
@@ -512,6 +509,7 @@ const Login = () => {
                     ) : (
                         <YStack gap={16}>
                             <PrimaryButton text={i18n.t("login_via_email")} onPress={onLogin}/>
+                            <GoogleSignInButton onPress={onGoogleLogin} isLoading={googleLoading}/>
                         </YStack>
                     )}
                 </YStack>

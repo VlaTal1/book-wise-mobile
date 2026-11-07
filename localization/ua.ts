@@ -8,6 +8,7 @@ const ua = {
     "validation_error_password": "Пароль має містити щонайменше 6 символів",
     "login_via_email": "Увійти через e-mail",
     "login_with_google": "Увійти через Google",
+    "error_google_login": "Не вдалося увійти через Google. Спробуйте ще раз.",
     "or": "або",
     "login": "Увійти",
     "sign_up": "Зареєструватися",

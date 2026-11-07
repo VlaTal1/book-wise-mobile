@@ -8,6 +8,7 @@ const en = {
     "validation_error_password": "Password must be at least 6 characters long",
     "login_via_email": "Login via e-mail",
     "login_with_google": "Login with Google",
+    "error_google_login": "Could not log in with Google. Please try again.",
     "or": "or",
     "login": "Login",
     "sign_up": "Sign up",

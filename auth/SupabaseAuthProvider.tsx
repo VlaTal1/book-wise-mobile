@@ -1,6 +1,7 @@
 import React, {createContext, ReactNode, useContext, useEffect, useRef, useState} from "react";
 import {PostgrestError, Session, User} from "@supabase/supabase-js";
-// import {GoogleSignin} from "@react-native-google-signin/google-signin";
+import {GoogleSignin, isCancelledResponse} from "@react-native-google-signin/google-signin";
+import Constants from "expo-constants";
 
 import {supabase} from "@/auth/supabase";
 
@@ -41,7 +42,8 @@ type AuthContextType = {
     profile: Profile | null;
     isLoading: boolean;
     signIn: (email: string, password: string) => Promise<{ error: ErrorType | null }>;
-    // signInWithGoogle: () => Promise<{ error: ErrorType | null }>;
+    // cancelled: true — користувач закрив вікно вибору акаунта (не помилка).
+    signInWithGoogle: () => Promise<{ error: ErrorType | null, cancelled?: boolean }>;
     signUp: (email: string, password: string) => Promise<{ error: ErrorType | null, user?: User | null }>;
     signOut: () => Promise<void>;
     updateProfile: (updates: { full_name?: string; emoji?: string }) => Promise<{
@@ -61,7 +63,7 @@ const AuthContext = createContext<AuthContextType>({
     profile: null,
     isLoading: true,
     signIn: async () => ({error: null}),
-    // signInWithGoogle: async () => ({error: null}),
+    signInWithGoogle: async () => ({error: null}),
     signUp: async () => ({error: null}),
     signOut: async () => {
     },
@@ -267,61 +269,64 @@ export const SupabaseAuthProvider = ({children}: Props) => {
         }
     };
 
-    // const signInWithGoogle = async (): Promise<{ error: ErrorType | null }> => {
-    //     logEvent("Google sign in attempt");
-    //
-    //     try {
-    //         // Check if your device supports Google Play
-    //         await GoogleSignin.hasPlayServices();
-    //
-    //         // Get the user ID token
-    //         const userInfo = await GoogleSignin.signIn()
-    //         if (!userInfo.data?.idToken) {
-    //             logEvent("Google sign in failed: No ID token present");
-    //             return {error: new Error("no ID token present!")}
-    //         }
-    //
-    //         const {data, error} = await supabase.auth.signInWithIdToken({
-    //             provider: "google",
-    //             token: userInfo.data.idToken,
-    //         })
-    //
-    //         if (error) {
-    //             logEvent("Google sign in failed", {error: error.message, code: error.code});
-    //             return {error};
-    //         }
-    //
-    //         logEvent("Google sign in successful", {
-    //             userId: data.user?.id,
-    //             hasSession: !!data.session,
-    //         });
-    //
-    //         // Immediately set the session and user without waiting for the event
-    //         if (data.session && data.user) {
-    //             setSession(data.session);
-    //             setUser(data.user);
-    //
-    //             // Retrieve the profile
-    //             const userProfile = await fetchProfile(data.user.id);
-    //             if (!userProfile) {
-    //                 return {error: new Error("Failed to retrieve profile after Google sign in")}
-    //             }
-    //
-    //             setProfile(userProfile);
-    //             logEvent("Profile loaded immediately after Google sign in");
-    //
-    //             if (userProfile.new) {
-    //                 await triggerUserSetup(data.session);
-    //             }
-    //         }
-    //
-    //         return {error: null};
-    //     } catch (e) {
-    //         const error = e as Error;
-    //         logEvent("Exception during Google sign in", {error: error.message});
-    //         return {error};
-    //     }
-    // };
+    /**
+     * Вхід через Google: нативне вікно вибору акаунта (Google Sign-In SDK)
+     * повертає idToken, який обмінюємо на сесію Supabase. Для нового
+     * користувача Supabase сам створює акаунт; роль далі обирається на
+     * звичайному екрані онбордингу (RoleOnboarding).
+     */
+    const signInWithGoogle = async (): Promise<{ error: ErrorType | null, cancelled?: boolean }> => {
+        logEvent("Google sign in attempt");
+
+        try {
+            await GoogleSignin.hasPlayServices({showPlayServicesUpdateDialog: true});
+
+            const response = await GoogleSignin.signIn();
+            if (isCancelledResponse(response)) {
+                logEvent("Google sign in cancelled by user");
+                return {error: null, cancelled: true};
+            }
+
+            const idToken = response.data.idToken;
+            if (!idToken) {
+                logEvent("Google sign in failed: No ID token present");
+                return {error: new Error("No ID token present")};
+            }
+
+            const {data, error} = await supabase.auth.signInWithIdToken({
+                provider: "google",
+                token: idToken,
+            });
+
+            if (error) {
+                logEvent("Google sign in failed", {error: error.message, code: error.code});
+                return {error};
+            }
+
+            logEvent("Google sign in successful", {
+                userId: data.user?.id,
+                hasSession: !!data.session,
+            });
+
+            // Як і в signIn — одразу виставляємо сесію, не чекаючи події.
+            if (data.session && data.user) {
+                setSession(data.session);
+                setUser(data.user);
+
+                const userProfile = await fetchProfile(data.user.id);
+                if (userProfile) {
+                    setProfile(userProfile);
+                    logEvent("Profile loaded immediately after Google sign in");
+                }
+            }
+
+            return {error: null};
+        } catch (e) {
+            const error = e as Error;
+            logEvent("Exception during Google sign in", {error: error.message});
+            return {error};
+        }
+    };
 
     /**
      * Function to sign up with email and password
@@ -395,6 +400,9 @@ export const SupabaseAuthProvider = ({children}: Props) => {
 
         try {
             await supabase.auth.signOut();
+            // Інакше наступний вхід через Google мовчки візьме той самий
+            // акаунт, без вікна вибору.
+            await GoogleSignin.signOut().catch(() => undefined);
             logEvent("Sign out successful");
         } catch (error) {
             logEvent("Error during sign out", {error});
@@ -589,14 +597,16 @@ export const SupabaseAuthProvider = ({children}: Props) => {
     };
 
 
-    // useEffect(() => {
-    //     const envVars = Constants.expoConfig!.extra!;
-    //     const googleAuthWebClientId = envVars["googleAuthWebClientId"]!
-    //
-    //     GoogleSignin.configure({
-    //         webClientId: googleAuthWebClientId,
-    //     });
-    // }, []);
+    useEffect(() => {
+        const webClientId = Constants.expoConfig?.extra?.googleAuthWebClientId;
+        if (!webClientId) {
+            logEvent("Google sign in is not configured: googleAuthWebClientId is missing");
+            return;
+        }
+        // webClientId (тип "Web application") — саме для нього Google видає
+        // idToken, який приймає Supabase.
+        GoogleSignin.configure({webClientId});
+    }, []);
 
     const value = {
         user,
@@ -604,7 +614,7 @@ export const SupabaseAuthProvider = ({children}: Props) => {
         profile,
         isLoading,
         signIn,
-        // signInWithGoogle,
+        signInWithGoogle,
         signUp,
         signOut,
         updateProfile,
