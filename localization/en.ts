@@ -163,6 +163,7 @@ const en = {
     "reading_speed_statistics": "Reading speed",
     "simple_reading_statistics": "Regular reading",
     "reading_speed_stats_average": "Average",
+    "reading_speed_avg_chart_legend": "Average reading speed, words/min",
     "reading_speed_stats_daily": "By day",
     "reading_speed_daily_wpm_note": "Speed is shown on a relative scale so all three lines fit on one chart — actual words-per-minute values are labeled on the line.",
     "statistics": "Statistics",

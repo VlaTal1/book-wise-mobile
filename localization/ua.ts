@@ -163,6 +163,7 @@ const ua = {
     "reading_speed_statistics": "Швидкість читання",
     "simple_reading_statistics": "Звичайне читання",
     "reading_speed_stats_average": "Середнє",
+    "reading_speed_avg_chart_legend": "Середня швидкість читання, сл/хв",
     "reading_speed_stats_daily": "По днях",
     "reading_speed_daily_wpm_note": "Швидкість показана у відносному масштабі, щоб усі три лінії вмістились на одному графіку — реальні значення слів/хв підписані на лінії.",
     "statistics": "Статистика",

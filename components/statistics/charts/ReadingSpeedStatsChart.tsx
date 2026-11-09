@@ -25,7 +25,7 @@ const BAR_COLOR_DIMMED = "#CB5A2E80";
 // бару кодує "наскільки далеко від maxGrade"), для WPM немає усталеного
 // порогу "добре/погано", тому бар завжди одного кольору — лише виділений/
 // невиділений.
-const ReadingSpeedStatsChart: React.FC<Props> = ({data, height = 300, width = 300}) => {
+const ReadingSpeedStatsChart: React.FC<Props> = ({data, height = 220, width = 300}) => {
     const [selectedIndex, setSelectedIndex] = useState(0);
     const flatListRef = useRef<FlatList>(null);
     const scrollX = useRef(new Animated.Value(0)).current;
@@ -151,6 +151,12 @@ const ReadingSpeedStatsChart: React.FC<Props> = ({data, height = 300, width = 30
     return (
         <View style={styles.container}>
             <View style={styles.chartContainer}>
+                <XStack alignItems="center" gap={8} alignSelf="flex-start" paddingBottom={12}>
+                    <View width={10} height={10} borderRadius={2} backgroundColor={BAR_COLOR}/>
+                    <CustomText size="p2Regular" color="$gray-40">
+                        {i18n.t("reading_speed_avg_chart_legend")}
+                    </CustomText>
+                </XStack>
                 <BarChart
                     stackData={chartData}
                     width={width}
@@ -169,6 +175,8 @@ const ReadingSpeedStatsChart: React.FC<Props> = ({data, height = 300, width = 30
                     yAxisThickness={0}
                     yAxisLabelWidth={40}
                     maxValue={yAxisMaxValue}
+                    showValuesAsTopLabel
+                    topLabelTextStyle={styles.topLabel}
                     noOfSections={5}
                     rulesColor="#C9AE87"
                     rulesType="dashed"
@@ -215,6 +223,12 @@ const styles = StyleSheet.create({
         color: "#A68A63",
         fontSize: 12,
         fontFamily: "System",
+    },
+    topLabel: {
+        color: "#3A2E20",
+        fontSize: 12,
+        fontWeight: "600",
+        marginBottom: 2,
     },
     cardListContainer: {
         paddingVertical: 10,
