@@ -16,6 +16,8 @@ import {AudioPlayerBar} from "@/components/readingSpeed/AudioPlayerBar";
 import {RecognizedTextView} from "@/components/readingSpeed/RecognizedTextView";
 import {WordStatusLegendModal} from "@/components/readingSpeed/WordStatusLegendModal";
 import {ReadingSpeedAttempt, ReferenceWord, StressWordVerdict, WordEventRecord, WordStatus} from "@/types/ReadingSpeed";
+import {formatGrade} from "@/constants/readingGrade";
+import {MetricLine, ScoreSection} from "@/components/readingSpeed/ScoreSection";
 
 const ReadingHistoryDetails = () => {
     const router = useRouter();
@@ -190,71 +192,72 @@ const ReadingHistoryDetails = () => {
                                 borderColor="$gray-85"
                                 gap={12}
                             >
-                                <YStack gap={2} paddingBottom={12} borderBottomWidth={1} borderColor="$gray-85">
+                                <YStack gap={2}>
                                     <XStack justifyContent="space-between" alignItems="center">
                                         <CustomText size="h5Medium" color="$gray-20">
                                             {i18n.t("reading_speed_grade")}
                                         </CustomText>
                                         {attempt.grade == null && gradePending ? (
-                                            <CustomText size="p2Regular" color="$gray-40">
+                                            <CustomText size="p1Regular" color="$gray-40">
                                                 {i18n.t("reading_speed_grade_pending")}
                                             </CustomText>
                                         ) : (
                                             <CustomText size="h2" color="#CB5A2E">
-                                                {attempt.grade != null ? `${attempt.grade}/10` : "—"}
+                                                {attempt.grade != null ? formatGrade(attempt.grade) : "—"}
                                             </CustomText>
                                         )}
                                     </XStack>
-                                    {attempt.targetWpm != null && (
-                                        <CustomText size="p3Regular" color="$gray-40">
-                                            {i18n.t("reading_history_grade_norm", {wpm: attempt.targetWpm})}
-                                        </CustomText>
-                                    )}
+                                    <CustomText size="p1Regular" color="$gray-40">
+                                        {i18n.t("reading_grade_sum_hint")}
+                                    </CustomText>
                                 </YStack>
-                                <XStack justifyContent="space-between">
-                                    <CustomText size="p1Regular" color="$gray-40">
-                                        {i18n.t("reading_speed_wpm")}
-                                    </CustomText>
-                                    <CustomText size="h4Medium" color="$gray-20">
-                                        {attempt.wpm}
-                                    </CustomText>
-                                </XStack>
-                                <XStack justifyContent="space-between">
-                                    <CustomText size="p1Regular" color="$gray-40">
-                                        {i18n.t("reading_speed_accuracy")}
-                                    </CustomText>
-                                    <CustomText size="h4Medium" color="$gray-20">
-                                        {Math.round(attempt.accuracy * 100)}%
-                                    </CustomText>
-                                </XStack>
-                                <XStack justifyContent="space-between">
-                                    <CustomText size="p2Regular" color="$gray-40">
-                                        {i18n.t("reading_speed_correct")}
-                                    </CustomText>
-                                    <CustomText size="p2Medium" color="$gray-20">
-                                        {attempt.correctCount}/{attempt.totalWords}
-                                    </CustomText>
-                                </XStack>
-                                {attempt.quizTotal != null && attempt.quizTotal > 0 && (
-                                    <XStack justifyContent="space-between">
-                                        <CustomText size="p2Regular" color="$gray-40">
-                                            {i18n.t("reading_speed_quiz_title")}
-                                        </CustomText>
-                                        <CustomText size="p2Medium" color="$gray-20">
-                                            {attempt.quizCorrect != null ? `${attempt.quizCorrect}/${attempt.quizTotal}` : "—"}
-                                        </CustomText>
-                                    </XStack>
-                                )}
-                                {stressLabel && (
-                                    <XStack justifyContent="space-between" paddingTop={8} borderTopWidth={1} borderColor="$gray-85">
-                                        <CustomText size="p1Regular" color="$gray-40">
-                                            {i18n.t("reading_speed_stress_accuracy")}
-                                        </CustomText>
-                                        <CustomText size="h4Medium" color="$gray-20">
-                                            {stressLabel}
-                                        </CustomText>
-                                    </XStack>
-                                )}
+
+                                <ScoreSection
+                                    title={i18n.t("reading_grade_speed")}
+                                    score={attempt.speedScore}
+                                    pending={gradePending}
+                                >
+                                    <MetricLine
+                                        label={i18n.t("reading_speed_wpm")}
+                                        value={attempt.targetWpm != null
+                                            ? i18n.t("reading_result_wpm_of_norm", {wpm: attempt.wpm, norm: attempt.targetWpm})
+                                            : attempt.wpm}
+                                    />
+                                </ScoreSection>
+
+                                <ScoreSection
+                                    title={i18n.t("reading_grade_pronunciation")}
+                                    score={attempt.pronunciationScore}
+                                    pending={gradePending}
+                                >
+                                    <MetricLine
+                                        label={i18n.t("reading_speed_correct")}
+                                        value={`${attempt.correctCount}/${attempt.totalWords} (${Math.round(attempt.accuracy * 100)}%)`}
+                                    />
+                                    <MetricLine
+                                        label={i18n.t("reading_result_errors_skipped")}
+                                        value={`${attempt.errorCount} / ${attempt.skippedCount}`}
+                                    />
+                                    {stressLabel && (
+                                        <MetricLine
+                                            label={i18n.t("reading_speed_stress_accuracy")}
+                                            value={stressLabel}
+                                        />
+                                    )}
+                                </ScoreSection>
+
+                                <ScoreSection
+                                    title={i18n.t("reading_grade_comprehension")}
+                                    score={attempt.comprehensionScore}
+                                    pending={gradePending && attempt.quizTotal != null && attempt.quizTotal > 0}
+                                >
+                                    <MetricLine
+                                        label={i18n.t("reading_result_quiz_answers")}
+                                        value={attempt.quizTotal != null && attempt.quizTotal > 0
+                                            ? (attempt.quizCorrect != null ? `${attempt.quizCorrect}/${attempt.quizTotal}` : "—")
+                                            : i18n.t("reading_grade_no_quiz")}
+                                    />
+                                </ScoreSection>
                             </YStack>
 
                             {attempt.audioFileName && (

@@ -6,6 +6,7 @@ import PrimaryButton from "@/components/buttons/PrimaryButton";
 import {formatFragment, formatTimeLimit} from "@/components/buttons/ClassroomReadingCard";
 import i18n from "@/localization/i18n";
 import {ClassroomReading} from "@/types/ClassroomReading";
+import {formatGrade} from "@/constants/readingGrade";
 
 type Props = {
     reading: ClassroomReading;
@@ -54,7 +55,7 @@ export const StudentReadingCard: FC<Props> = ({reading, onStart}) => {
                     </CustomText>
                     {reading.bestGrade != null && (
                         <CustomText size="p2Medium" color="$gray-20">
-                            {i18n.t("reading_best_grade", {grade: `${reading.bestGrade}/10`})}
+                            {i18n.t("reading_best_grade", {grade: formatGrade(reading.bestGrade)})}
                         </CustomText>
                     )}
                 </YStack>

@@ -10,6 +10,7 @@ import useApi from "@/hooks/useApi";
 import statisticsApi from "@/api/endpoints/statisticsApi";
 import {Participant} from "@/types/Paticipant";
 import {ReadingSpeedStatsByParticipant} from "@/types/statistics/ReadingSpeedStats";
+import {GRADE_MAX} from "@/constants/readingGrade";
 
 type Props = {
     // Уже відсортовано бекендом за середньою оцінкою (без оцінок — наприкінці).
@@ -187,7 +188,7 @@ const GradesStatistics = ({stats, students}: Props) => {
                             height={180}
                             spacing={CHART_WIDTH / Math.max(chartData.length, 4) / 1.5}
                             initialSpacing={16}
-                            maxValue={10}
+                            maxValue={GRADE_MAX}
                             noOfSections={5}
                             curved
                             textColor1="#A68A63"

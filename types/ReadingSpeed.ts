@@ -149,8 +149,12 @@ export interface ReadingSpeedAttempt {
     // відповідей (null — учень ще не надіслав результат).
     quizTotal: number | null;
     quizCorrect: number | null;
-    // Оцінка 1-10 — лише остаточна (після перевірки наголосу й тесту), до того null.
+    // Оцінка 0-15 — лише остаточна (після перевірки наголосу й тесту), до того null.
+    // Складові по 0-5; comprehensionScore null — тесту не було.
     grade: number | null;
+    speedScore: number | null;
+    pronunciationScore: number | null;
+    comprehensionScore: number | null;
     createdAt: string;
     updatedAt: string;
 }

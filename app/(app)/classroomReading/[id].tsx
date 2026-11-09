@@ -14,16 +14,7 @@ import i18n from "@/localization/i18n";
 import useApi from "@/hooks/useApi";
 import classroomReadingApi from "@/api/endpoints/classroomReadingApi";
 import {ClassroomReadingResults, StudentReadingResult} from "@/types/ClassroomReading";
-
-const gradeColors = (grade: number) => {
-    if (grade >= 7) {
-        return {bg: "#E7F3EA", text: "#2F6B45"};
-    }
-    if (grade >= 4) {
-        return {bg: "#FBF1DC", text: "#8A6416"};
-    }
-    return {bg: "#FBEAE8", text: "#C1443A"};
-};
+import {formatGrade, gradeColors} from "@/constants/readingGrade";
 
 const StudentRow = ({result, position, maxAttempts, onPress}: {
     result: StudentReadingResult;
@@ -72,7 +63,7 @@ const StudentRow = ({result, position, maxAttempts, onPress}: {
             {colors && result.bestGrade !== null ? (
                 <XStack backgroundColor={colors.bg} paddingHorizontal={12} paddingVertical={6} borderRadius={999}>
                     <CustomText size="h5Medium" color={colors.text}>
-                        {result.bestGrade}/10
+                        {formatGrade(result.bestGrade)}
                     </CustomText>
                 </XStack>
             ) : (

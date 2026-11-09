@@ -13,6 +13,7 @@ import i18n from "@/localization/i18n";
 import useApi from "@/hooks/useApi";
 import readingSpeedAttemptApi from "@/api/endpoints/readingSpeedAttemptApi";
 import {ReadingSpeedAttempt} from "@/types/ReadingSpeed";
+import {formatGrade} from "@/constants/readingGrade";
 
 const formatDate = (iso: string): string => {
     const date = new Date(iso);
@@ -66,7 +67,7 @@ const ReadingHistoryRow = ({attempt, onPress, onDelete}: {
                             borderRadius={999}
                         >
                             <CustomText size="p2Medium" color="#CB5A2E">
-                                {attempt.grade}/10
+                                {formatGrade(attempt.grade)}
                             </CustomText>
                         </XStack>
                     )}

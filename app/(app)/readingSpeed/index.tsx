@@ -20,6 +20,8 @@ import {ClassroomReading} from "@/types/ClassroomReading";
 import {StudentReadingCard} from "@/components/readingSpeed/StudentReadingCard";
 import readingSpeedAttemptApi from "@/api/endpoints/readingSpeedAttemptApi";
 import {ComprehensionQuizQuestion, ReadingSpeedMetrics, ReferenceWord, StressStatus, WordStatus} from "@/types/ReadingSpeed";
+import {formatGrade, GradeScores, pickGradeScores} from "@/constants/readingGrade";
+import {MetricLine, ScoreSection} from "@/components/readingSpeed/ScoreSection";
 
 // Скільки чекати між опитуваннями стану шару перевірки наголосу — forced
 // alignment триває секунди, не мілісекунди (docs/reading-speed-implementation-
@@ -76,7 +78,8 @@ const ReadingSpeed = () => {
     const [stressProgress, setStressProgress] = useState<number | null>(null);
     const [stressAccuracy, setStressAccuracy] = useState<number | null>(null);
     // Остаточна оцінка 1-10 рахується в Java, коли готові і наголос, і тест.
-    const [grade, setGrade] = useState<number | null>(null);
+    const [gradeScores, setGradeScores] = useState<GradeScores | null>(null);
+    const grade = gradeScores?.grade ?? null;
     const [quizSubmitted, setQuizSubmitted] = useState(false);
 
     const [secondsLeft, setSecondsLeft] = useState(READING_TIME_LIMIT_SECONDS);
@@ -143,7 +146,7 @@ const ReadingSpeed = () => {
             setStressStatus(response.data.stressStatus);
             setStressProgress(response.data.stressProgress);
             setStressAccuracy(response.data.stressAccuracy);
-            setGrade(response.data.grade);
+            setGradeScores(pickGradeScores(response.data));
             if (STRESS_TERMINAL_STATUSES.includes(response.data.stressStatus)) {
                 stopStressPolling();
             }
@@ -215,7 +218,7 @@ const ReadingSpeed = () => {
         setStressStatus(null);
         setStressProgress(null);
         setStressAccuracy(null);
-        setGrade(null);
+        setGradeScores(null);
         setQuizSubmitted(false);
         stopStressPolling();
         stopReadingTimer();
@@ -316,7 +319,7 @@ const ReadingSpeed = () => {
         setQuizSubmitted(true);
         readingSpeedAttemptApi.submitQuizResult({id: attemptId, correct: quizScore}).then((response) => {
             if (response.success && response.data.grade != null) {
-                setGrade(response.data.grade);
+                setGradeScores(pickGradeScores(response.data));
             }
         });
     }, [attemptId, quizScore, quizSubmitted]);
@@ -527,129 +530,103 @@ const ReadingSpeed = () => {
                                     shadowOpacity: 1,
                                 }}
                             >
-                                <XStack
-                                    justifyContent="space-between"
-                                    alignItems="center"
-                                    paddingBottom={12}
-                                    borderBottomWidth={1}
-                                    borderColor="$gray-85"
-                                >
-                                    <CustomText size="h5Medium" color="$gray-20">
-                                        {i18n.t("reading_speed_grade")}
-                                    </CustomText>
-                                    {gradePending ? (
-                                        <XStack alignItems="center" gap={8}>
-                                            <ActivityIndicator size="small" color="#CB5A2E"/>
-                                            <CustomText size="p2Regular" color="$gray-40">
-                                                {i18n.t("reading_speed_grade_pending")}
+                                <YStack gap={2}>
+                                    <XStack justifyContent="space-between" alignItems="center">
+                                        <CustomText size="h5Medium" color="$gray-20">
+                                            {i18n.t("reading_speed_grade")}
+                                        </CustomText>
+                                        {gradePending ? (
+                                            <XStack alignItems="center" gap={8}>
+                                                <ActivityIndicator size="small" color="#CB5A2E"/>
+                                                <CustomText size="p1Regular" color="$gray-40">
+                                                    {i18n.t("reading_speed_grade_pending")}
+                                                </CustomText>
+                                            </XStack>
+                                        ) : (
+                                            <CustomText size="h2" color="#CB5A2E">
+                                                {grade != null ? formatGrade(grade) : "—"}
                                             </CustomText>
-                                        </XStack>
-                                    ) : (
-                                        <CustomText size="h2" color="#CB5A2E">
-                                            {grade != null ? `${grade}/10` : "—"}
-                                        </CustomText>
-                                    )}
-                                </XStack>
-                                <XStack justifyContent="space-between">
-                                    <CustomText size="p1Regular" color="$gray-40">
-                                        {i18n.t("reading_speed_wpm")}
-                                    </CustomText>
-                                    <CustomText size="h4Medium" color="$gray-20">
-                                        {metrics.wpm}
-                                    </CustomText>
-                                </XStack>
-                                <XStack justifyContent="space-between">
-                                    <CustomText size="p1Regular" color="$gray-40">
-                                        {i18n.t("reading_speed_accuracy")}
-                                    </CustomText>
-                                    <CustomText size="h4Medium" color="$gray-20">
-                                        {Math.round(metrics.accuracy * 100)}%
-                                    </CustomText>
-                                </XStack>
-                                <XStack justifyContent="space-between">
-                                    <CustomText size="p2Regular" color="$gray-40">
-                                        {i18n.t("reading_speed_correct")}
-                                    </CustomText>
-                                    <CustomText size="p2Medium" color="$gray-20">
-                                        {metrics.correct_count}/{metrics.total_words}
-                                    </CustomText>
-                                </XStack>
-                                <XStack justifyContent="space-between">
-                                    <CustomText size="p2Regular" color="$gray-40">
-                                        {i18n.t("reading_speed_errors")}
-                                    </CustomText>
-                                    <CustomText size="p2Medium" color="$gray-20">
-                                        {metrics.error_count}
-                                    </CustomText>
-                                </XStack>
-                                <XStack justifyContent="space-between">
-                                    <CustomText size="p2Regular" color="$gray-40">
-                                        {i18n.t("reading_speed_skipped")}
-                                    </CustomText>
-                                    <CustomText size="p2Medium" color="$gray-20">
-                                        {metrics.skipped_count}
-                                    </CustomText>
-                                </XStack>
-
-                                {quizScore !== null && quiz && (
-                                    <XStack justifyContent="space-between">
-                                        <CustomText size="p2Regular" color="$gray-40">
-                                            {i18n.t("reading_speed_quiz_title")}
-                                        </CustomText>
-                                        <CustomText size="p2Medium" color="$gray-20">
-                                            {quizScore}/{quiz.length}
-                                        </CustomText>
+                                        )}
                                     </XStack>
-                                )}
+                                    <CustomText size="p1Regular" color="$gray-40">
+                                        {i18n.t("reading_grade_sum_hint")}
+                                    </CustomText>
+                                </YStack>
 
-                                {stressStatus && stressStatus !== "NOT_APPLICABLE" && (
-                                    <YStack gap={6} paddingTop={4} borderTopWidth={1} borderColor="$gray-85">
-                                        <XStack justifyContent="space-between" alignItems="center" paddingTop={8}>
-                                            <CustomText size="p1Regular" color="$gray-40">
-                                                {i18n.t("reading_speed_stress_accuracy")}
-                                            </CustomText>
+                                <ScoreSection
+                                    title={i18n.t("reading_grade_speed")}
+                                    score={gradeScores?.speedScore}
+                                    pending={gradePending}
+                                >
+                                    <MetricLine
+                                        label={i18n.t("reading_speed_wpm")}
+                                        value={gradeScores?.targetWpm != null
+                                            ? i18n.t("reading_result_wpm_of_norm", {wpm: metrics.wpm, norm: gradeScores.targetWpm})
+                                            : metrics.wpm}
+                                    />
+                                </ScoreSection>
 
-                                            {stressStatus === "DONE" && (
-                                                <CustomText size="h4Medium" color="$gray-20">
-                                                    {stressAccuracy !== null ? `${Math.round(stressAccuracy * 100)}%` : "—"}
-                                                </CustomText>
-                                            )}
-
-                                            {stressStatus === "FAILED" && (
-                                                <CustomText size="p2Regular" color="$gray-40">
-                                                    {i18n.t("reading_speed_stress_failed")}
-                                                </CustomText>
-                                            )}
-
-                                            {(stressStatus === "PENDING" || stressStatus === "PROCESSING") && (
+                                <ScoreSection
+                                    title={i18n.t("reading_grade_pronunciation")}
+                                    score={gradeScores?.pronunciationScore}
+                                    pending={gradePending}
+                                >
+                                    <MetricLine
+                                        label={i18n.t("reading_speed_correct")}
+                                        value={`${metrics.correct_count}/${metrics.total_words} (${Math.round(metrics.accuracy * 100)}%)`}
+                                    />
+                                    <MetricLine
+                                        label={i18n.t("reading_result_errors_skipped")}
+                                        value={`${metrics.error_count} / ${metrics.skipped_count}`}
+                                    />
+                                    {stressStatus && stressStatus !== "NOT_APPLICABLE" && (
+                                        <MetricLine
+                                            label={i18n.t("reading_speed_stress_accuracy")}
+                                            value={stressStatus === "DONE" ? (
+                                                stressAccuracy !== null ? `${Math.round(stressAccuracy * 100)}%` : "—"
+                                            ) : stressStatus === "FAILED" ? (
+                                                i18n.t("reading_speed_stress_failed")
+                                            ) : (
                                                 <XStack alignItems="center" gap={8}>
                                                     <ActivityIndicator size="small" color="#CB5A2E"/>
-                                                    <CustomText size="p2Regular" color="$gray-40">
+                                                    <CustomText size="p1Regular" color="$gray-40">
                                                         {stressProgress !== null
                                                             ? `${stressProgress}%`
                                                             : i18n.t("reading_speed_stress_processing")}
                                                     </CustomText>
                                                 </XStack>
                                             )}
-                                        </XStack>
+                                        />
+                                    )}
+                                    {(stressStatus === "PENDING" || stressStatus === "PROCESSING") && (
+                                        <>
+                                            <YStack height={6} borderRadius={3} backgroundColor="$gray-85" overflow="hidden">
+                                                <YStack
+                                                    height="100%"
+                                                    width={`${stressProgress ?? 6}%`}
+                                                    backgroundColor="#CB5A2E"
+                                                    borderRadius={3}
+                                                />
+                                            </YStack>
+                                            <CustomText size="p1Regular" color="$gray-40">
+                                                {i18n.t("reading_speed_stress_hint")}
+                                            </CustomText>
+                                        </>
+                                    )}
+                                </ScoreSection>
 
-                                        {(stressStatus === "PENDING" || stressStatus === "PROCESSING") && (
-                                            <>
-                                                <YStack height={6} borderRadius={3} backgroundColor="$gray-85" overflow="hidden">
-                                                    <YStack
-                                                        height="100%"
-                                                        width={`${stressProgress ?? 6}%`}
-                                                        backgroundColor="#CB5A2E"
-                                                        borderRadius={3}
-                                                    />
-                                                </YStack>
-                                                <CustomText size="p3Regular" color="$gray-40">
-                                                    {i18n.t("reading_speed_stress_hint")}
-                                                </CustomText>
-                                            </>
-                                        )}
-                                    </YStack>
-                                )}
+                                <ScoreSection
+                                    title={i18n.t("reading_grade_comprehension")}
+                                    score={gradeScores?.comprehensionScore}
+                                    pending={gradePending && (quiz?.length ?? 0) > 0}
+                                >
+                                    <MetricLine
+                                        label={i18n.t("reading_result_quiz_answers")}
+                                        value={quizScore !== null && quiz && quiz.length > 0
+                                            ? `${quizScore}/${quiz.length}`
+                                            : i18n.t("reading_grade_no_quiz")}
+                                    />
+                                </ScoreSection>
                             </YStack>
 
                             <PrimaryButton
