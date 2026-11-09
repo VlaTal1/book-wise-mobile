@@ -1,4 +1,4 @@
-import React, {useState} from "react";
+import React, {useRef, useState} from "react";
 import {ActivityIndicator, Alert} from "react-native";
 import { View, XStack, YStack} from "tamagui";
 
@@ -20,6 +20,10 @@ enum PasswordResetStep {
     VERIFY_CODE, // Enter verification code screen
     NEW_PASSWORD, // Enter new password screen
 }
+
+const EMAIL_UNLOCK_TAPS = 10;
+// Пауза між натисканнями, після якої лічильник починається спочатку.
+const EMAIL_UNLOCK_TAP_GAP_MS = 1500;
 
 const GoogleSignInButton = ({onPress, isLoading}: {
     onPress: () => void;
@@ -71,6 +75,10 @@ const Login = () => {
     } = useAuth();
     // General login state
     const [showLoginForm, setShowLoginForm] = useState(false);
+    // Вхід через пошту прихований (у застосунку лише Google). Для тестування
+    // відкривається 10 швидкими натисканнями на назву застосунку.
+    const [emailLoginUnlocked, setEmailLoginUnlocked] = useState(false);
+    const titleTaps = useRef({count: 0, last: 0});
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [localLoading, setLocalLoading] = useState(false);
@@ -431,6 +439,16 @@ const Login = () => {
         );
     }
 
+    const onTitlePress = () => {
+        const now = Date.now();
+        const taps = titleTaps.current;
+        taps.count = now - taps.last > EMAIL_UNLOCK_TAP_GAP_MS ? 1 : taps.count + 1;
+        taps.last = now;
+        if (taps.count >= EMAIL_UNLOCK_TAPS) {
+            setEmailLoginUnlocked(true);
+        }
+    };
+
     // Regular login screen
     return (
         <KeyboardAwareContainer>
@@ -448,7 +466,7 @@ const Login = () => {
                                 <CustomText size="p1Light" color="$gray-40">
                                     {i18n.t("welcome_to")}
                                 </CustomText>
-                                <CustomText size="h1" color="$gray-20">
+                                <CustomText size="h1" color="$gray-20" onPress={onTitlePress} suppressHighlighting>
                                     {i18n.t("app_name")}
                                 </CustomText>
                             </View>
@@ -508,7 +526,9 @@ const Login = () => {
                         </YStack>
                     ) : (
                         <YStack gap={16}>
-                            <PrimaryButton text={i18n.t("login_via_email")} onPress={onLogin}/>
+                            {emailLoginUnlocked && (
+                                <PrimaryButton text={i18n.t("login_via_email")} onPress={onLogin}/>
+                            )}
                             <GoogleSignInButton onPress={onGoogleLogin} isLoading={googleLoading}/>
                         </YStack>
                     )}
