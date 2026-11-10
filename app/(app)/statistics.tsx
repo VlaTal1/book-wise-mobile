@@ -11,6 +11,7 @@ import i18n from "@/localization/i18n";
 import SegmentedControl from "@/components/SegmentedControl";
 import SimpleReadingStatistics from "@/components/statistics/SimpleReadingStatistics";
 import ReadingSpeedStatistics from "@/components/statistics/ReadingSpeedStatistics";
+import {READING_TESTS_ENABLED} from "@/constants/features";
 
 // Два незалежних розділи статистики — "просте" читання (оцінки за тести,
 // сторінки/час, ReadingSession) і читання на швидкість (WPM/точність/
@@ -62,13 +63,20 @@ const StatisticsView = () => {
                         <CustomText size="h1" color="$gray-20">
                             {i18n.t("statistics")}
                         </CustomText>
-                        <SegmentedControl
-                            variant="white"
-                            options={sections}
-                            currentTab={currentSection}
-                            onChange={setCurrentSection}
-                        />
-                        {currentSection === 0 ? <SimpleReadingStatistics/> : <ReadingSpeedStatistics/>}
+                        {READING_TESTS_ENABLED ? (
+                            <>
+                                <SegmentedControl
+                                    variant="white"
+                                    options={sections}
+                                    currentTab={currentSection}
+                                    onChange={setCurrentSection}
+                                />
+                                {currentSection === 0 ? <SimpleReadingStatistics/> : <ReadingSpeedStatistics/>}
+                            </>
+                        ) : (
+                            // Поки тести приховані — лише статистика читання на швидкість.
+                            <ReadingSpeedStatistics/>
+                        )}
                     </YStack>
                 </ScrollView>
             </YStack>

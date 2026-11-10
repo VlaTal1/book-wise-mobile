@@ -24,6 +24,7 @@ import {Test} from "@/types/Test";
 import Message from "@/components/Message";
 import {useAppDispatch, useAppSelector} from "@/store";
 import {setCurrentTest} from "@/store/testSlice";
+import {READING_TESTS_ENABLED} from "@/constants/features";
 import {
     saveSession,
     setEndPage,
@@ -187,7 +188,8 @@ const Reader = () => {
     }, [id]);
 
     useEffect(() => {
-        if (isStudent && studentId) {
+        // Без завантаженого тесту читалка не перекидає учня на проходження тесту.
+        if (READING_TESTS_ENABLED && isStudent && studentId) {
             invokeFetchFirstTestByParticipantIdAndBookId();
         }
     }, [studentId, isStudent]);

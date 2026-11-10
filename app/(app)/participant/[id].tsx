@@ -16,6 +16,7 @@ import {Participant} from "@/types/Paticipant";
 import testApi from "@/api/endpoints/testApi";
 import {Test} from "@/types/Test";
 import TestButton from "@/components/buttons/TestButton";
+import {READING_TESTS_ENABLED} from "@/constants/features";
 import {useAppSelector} from "@/store";
 import {getAvatarColor, getInitial} from "@/constants/avatarPalette";
 
@@ -112,6 +113,9 @@ const ParticipantDetails = () => {
     }, [participant, testBook]);
 
     useEffect(() => {
+        if (!READING_TESTS_ENABLED) {
+            return;
+        }
         if (testBook) {
             invokeFetchTestsByParticipantIdAndBookIdApi()
         } else {
@@ -205,7 +209,7 @@ const ParticipantDetails = () => {
                         </YStack>
                     </YStack>
 
-                    {isTeacher && (
+                    {isTeacher && READING_TESTS_ENABLED && (
                         <YStack gap={12} flex={1}>
                             <CustomText size="h5Medium" color="$gray-20" paddingLeft={4}>
                                 {i18n.t("tests") || "Assigned Reading Assessments"}

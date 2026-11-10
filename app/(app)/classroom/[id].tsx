@@ -31,6 +31,7 @@ import {ClassroomReading} from "@/types/ClassroomReading";
 import JoinClassroomModal from "@/components/modal/join-classroom-modal";
 import CreateClassroomModal from "@/components/modal/create-classroom-modal";
 import {useRole} from "@/hooks/roleContext";
+import {READING_TESTS_ENABLED} from "@/constants/features";
 
 const ClassroomScreen = () => {
     const {isTeacher, refreshProfile, startStudentMode} = useRole();
@@ -223,7 +224,7 @@ const ClassroomScreen = () => {
 
     // Поки якийсь тест генерується, періодично оновлюємо сторінку, щоб
     // вчитель побачив "Готово" або помилку без ручного оновлення.
-    const hasGeneratingTests = classroom?.tests.some((test) => test.generationStatus === "GENERATING") ?? false;
+    const hasGeneratingTests = READING_TESTS_ENABLED && (classroom?.tests.some((test) => test.generationStatus === "GENERATING") ?? false);
     useEffect(() => {
         if (!hasGeneratingTests) {
             return;
@@ -480,7 +481,7 @@ const ClassroomScreen = () => {
                             </YStack>
                         )}
 
-                        {isTeacher && (
+                        {isTeacher && READING_TESTS_ENABLED && (
                             <YStack gap={12}>
                                 <CustomText size="h5Medium" color="$gray-20" paddingLeft={4}>
                                     {i18n.t("classroom_tests")}
@@ -560,12 +561,14 @@ const ClassroomScreen = () => {
                             disabled={assignBookApi.loading}
                         />
                         <XStack gap={6}>
-                            <SecondaryButton
-                                flex={1}
-                                onPress={() => setIsCreateTestModalOpen(true)}
-                                text={i18n.t("assign_test")}
-                                disabled={classroom.books.length === 0 || classroom.students.length === 0}
-                            />
+                            {READING_TESTS_ENABLED && (
+                                <SecondaryButton
+                                    flex={1}
+                                    onPress={() => setIsCreateTestModalOpen(true)}
+                                    text={i18n.t("assign_test")}
+                                    disabled={classroom.books.length === 0 || classroom.students.length === 0}
+                                />
+                            )}
                             <SecondaryButton
                                 flex={1}
                                 onPress={() => setIsCreateReadingModalOpen(true)}
@@ -610,14 +613,16 @@ const ClassroomScreen = () => {
                         classroomName={classroom.name}
                         books={classroom.books}
                     />
-                    <CreateTestModal
-                        isOpen={isCreateTestModalOpen}
-                        onClose={() => setIsCreateTestModalOpen(false)}
-                        onSave={invokeFetchClassroom}
-                        classroomId={classroom.id}
-                        classroomName={classroom.name}
-                        books={classroom.books}
-                    />
+                    {READING_TESTS_ENABLED && (
+                        <CreateTestModal
+                            isOpen={isCreateTestModalOpen}
+                            onClose={() => setIsCreateTestModalOpen(false)}
+                            onSave={invokeFetchClassroom}
+                            classroomId={classroom.id}
+                            classroomName={classroom.name}
+                            books={classroom.books}
+                        />
+                    )}
                 </>
             )}
 

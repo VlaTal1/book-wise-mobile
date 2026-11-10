@@ -13,6 +13,7 @@ import i18n from "@/localization/i18n";
 import BurgerMenu from "@/components/BurgerMenu";
 import {useRole} from "@/hooks/roleContext";
 import {getAvatarColor, getInitial} from "@/constants/avatarPalette";
+import {READING_TESTS_ENABLED} from "@/constants/features";
 
 const Home = () => {
     const {user, signOut} = useAuth();
@@ -81,11 +82,13 @@ const Home = () => {
                         type="books"
                         onPress={() => router.navigate("/books")}
                     />
-                    <HomeMenuCard
-                        title={i18n.t("tests")}
-                        type="tests"
-                        onPress={() => router.navigate("/tests")}
-                    />
+                    {READING_TESTS_ENABLED && (
+                        <HomeMenuCard
+                            title={i18n.t("tests")}
+                            type="tests"
+                            onPress={() => router.navigate("/tests")}
+                        />
+                    )}
                     {isStudent && (
                         <HomeMenuCard
                             title={i18n.t("reading_speed_title")}
