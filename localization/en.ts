@@ -302,6 +302,8 @@ const en = {
     "reading_selected_words": "Words selected: %{count}",
     "reading_too_long": "Fragment is too long — at most %{max} words",
     "reading_no_text": "No text found on these pages",
+    "reading_name": "Name (optional)",
+    "reading_name_placeholder": "E.g. \"Speed reading 1\" or \"Homework\"",
     "reading_time_limit": "Reading time",
     "reading_attempts": "Number of attempts",
     "reading_no_time_limit": "No limit",

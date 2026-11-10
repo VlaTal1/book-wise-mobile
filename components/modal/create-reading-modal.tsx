@@ -28,6 +28,8 @@ type Props = {
 
 // Той самий ліміт, що й на бекенді (ClassroomReadingService.MAX_WORDS).
 const MAX_WORDS = 1500;
+// Як ClassroomReadingService.MAX_NAME_LENGTH.
+const MAX_NAME_LENGTH = 100;
 
 // null — без обмежень.
 const TIME_LIMIT_OPTIONS: (number | null)[] = [60, 120, 180, 300, null];
@@ -56,6 +58,7 @@ const Chip: FC<{label: string; selected: boolean; onPress: () => void}> = ({labe
 const CreateReadingModal: FC<Props> = ({onClose, isOpen, onSave, classroomId, classroomName, books}) => {
 
     const [mode, setMode] = useState<ReadingMode>("FIXED");
+    const [name, setName] = useState("");
     const [selectedBook, setSelectedBook] = useState<Book | undefined>(undefined);
     const [isBookSelectModalOpen, setIsBookSelectModalOpen] = useState(false);
     const [startPage, setStartPage] = useState("1");
@@ -78,6 +81,7 @@ const CreateReadingModal: FC<Props> = ({onClose, isOpen, onSave, classroomId, cl
     const onCancel = useCallback(() => {
         onClose();
         setMode("FIXED");
+        setName("");
         setSelectedBook(undefined);
         setStartPage("1");
         setEndPage("1");
@@ -168,10 +172,11 @@ const CreateReadingModal: FC<Props> = ({onClose, isOpen, onSave, classroomId, cl
         if (!isValid || !selectedBook) {
             return;
         }
+        const trimmedName = name.trim() || undefined;
         if (mode === "RANDOM") {
             createReadingApi.execute({
                 classroomId: classroomId.toString(),
-                reading: {mode, bookId: selectedBook.id, timeLimitSeconds, maxAttempts},
+                reading: {mode, name: trimmedName, bookId: selectedBook.id, timeLimitSeconds, maxAttempts},
             });
             return;
         }
@@ -182,6 +187,7 @@ const CreateReadingModal: FC<Props> = ({onClose, isOpen, onSave, classroomId, cl
             classroomId: classroomId.toString(),
             reading: {
                 mode,
+                name: trimmedName,
                 bookId: selectedBook.id,
                 startPage: Number(startPage),
                 endPage: Number(endPage),
@@ -191,7 +197,7 @@ const CreateReadingModal: FC<Props> = ({onClose, isOpen, onSave, classroomId, cl
                 maxAttempts,
             },
         });
-    }, [isValid, mode, selectedBook, startParagraph, endParagraph, createReadingApi, classroomId, startPage, endPage, timeLimitSeconds, maxAttempts]);
+    }, [isValid, mode, name, selectedBook, startParagraph, endParagraph, createReadingApi, classroomId, startPage, endPage, timeLimitSeconds, maxAttempts]);
 
     const isInRange = (index: number) => {
         if (startParagraph === null) {
@@ -226,6 +232,17 @@ const CreateReadingModal: FC<Props> = ({onClose, isOpen, onSave, classroomId, cl
             >
                 <ScrollView contentContainerStyle={{flexGrow: 1, paddingBottom: 24}} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
                     <YStack gap={12}>
+                        <LabelledInput label={i18n.t("reading_name")} htmlFor="readingName">
+                            <Input
+                                id="readingName"
+                                value={name}
+                                setValue={setName}
+                                placeholder={i18n.t("reading_name_placeholder")}
+                                autoCapitalize="sentences"
+                                maxLength={MAX_NAME_LENGTH}
+                            />
+                        </LabelledInput>
+
                         <XStack gap={6} flexWrap="wrap">
                             <Chip label={i18n.t("reading_mode_fixed")} selected={mode === "FIXED"} onPress={() => setMode("FIXED")}/>
                             <Chip label={i18n.t("reading_mode_random")} selected={mode === "RANDOM"} onPress={() => setMode("RANDOM")}/>

@@ -155,6 +155,8 @@ export interface ReadingSpeedAttempt {
     speedScore: number | null;
     pronunciationScore: number | null;
     comprehensionScore: number | null;
+    // Назва завдання класу (задана вчителем або назва книги); null — вільне тренування.
+    classroomReadingTitle?: string | null;
     createdAt: string;
     updatedAt: string;
 }

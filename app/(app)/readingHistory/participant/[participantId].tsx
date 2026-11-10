@@ -76,6 +76,9 @@ const ReadingHistoryRow = ({attempt, onPress, onDelete}: {
                     </XStack>
                 </XStack>
             </XStack>
+            <CustomText size="p2Regular" color="$gray-20" numberOfLines={1}>
+                {attempt.classroomReadingTitle ?? i18n.t("reading_free_practice")}
+            </CustomText>
             <XStack gap={16}>
                 <CustomText size="p2Regular" color="$gray-40">
                     {attempt.wpm} {i18n.t("reading_history_wpm_short")}

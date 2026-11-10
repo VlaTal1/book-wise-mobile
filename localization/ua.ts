@@ -302,6 +302,8 @@ const ua = {
     "reading_selected_words": "Обрано слів: %{count}",
     "reading_too_long": "Задовгий фрагмент — не більше %{max} слів",
     "reading_no_text": "На цих сторінках не знайдено тексту",
+    "reading_name": "Назва (необов'язково)",
+    "reading_name_placeholder": "Напр. «Читання на швидкість 1» або «Домашнє завдання»",
     "reading_time_limit": "Час на читання",
     "reading_attempts": "Кількість спроб",
     "reading_no_time_limit": "Без ліміту",

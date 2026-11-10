@@ -9,7 +9,7 @@ import CustomStackScreen from "@/components/CustomStackScreen";
 import Header from "@/components/Header";
 import HeaderButton from "@/components/buttons/HeaderButton";
 import {CustomText} from "@/components/CustomText";
-import {formatAttempts, formatFragment, formatTimeLimit} from "@/components/buttons/ClassroomReadingCard";
+import {formatAttempts, formatFragment, formatTimeLimit, readingTitle} from "@/components/buttons/ClassroomReadingCard";
 import i18n from "@/localization/i18n";
 import useApi from "@/hooks/useApi";
 import classroomReadingApi from "@/api/endpoints/classroomReadingApi";
@@ -163,8 +163,13 @@ const ClassroomReadingResultsScreen = () => {
                                     </CustomText>
                                 </XStack>
                                 <CustomText size="h5Medium" color="$gray-20">
-                                    {reading.bookTitle}
+                                    {readingTitle(reading)}
                                 </CustomText>
+                                {reading.name && (
+                                    <CustomText size="p2Regular" color="$gray-20">
+                                        {reading.bookTitle}
+                                    </CustomText>
+                                )}
                                 <CustomText size="p2Regular" color="$gray-40">
                                     {formatFragment(reading)}
                                 </CustomText>

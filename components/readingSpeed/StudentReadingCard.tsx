@@ -3,7 +3,7 @@ import {XStack, YStack} from "tamagui";
 
 import {CustomText} from "@/components/CustomText";
 import PrimaryButton from "@/components/buttons/PrimaryButton";
-import {formatFragment, formatTimeLimit} from "@/components/buttons/ClassroomReadingCard";
+import {formatFragment, formatTimeLimit, readingTitle} from "@/components/buttons/ClassroomReadingCard";
 import i18n from "@/localization/i18n";
 import {ClassroomReading} from "@/types/ClassroomReading";
 import {formatGrade} from "@/constants/readingGrade";
@@ -31,8 +31,13 @@ export const StudentReadingCard: FC<Props> = ({reading, onStart}) => {
         >
             <YStack gap={2}>
                 <CustomText size="h5Medium" color="$gray-20" numberOfLines={2}>
-                    {reading.bookTitle}
+                    {readingTitle(reading)}
                 </CustomText>
+                {reading.name && (
+                    <CustomText size="p2Regular" color="$gray-20" numberOfLines={1}>
+                        {reading.bookTitle}
+                    </CustomText>
+                )}
                 <CustomText size="p3Regular" color="$gray-40">
                     {formatFragment(reading)}
                     {" · "}

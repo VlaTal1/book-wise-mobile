@@ -22,6 +22,9 @@ export const formatFragment = (reading: ClassroomReading) =>
         ? i18n.t("reading_random_excerpts")
         : `${i18n.t("pages_range", {start: reading.startPage, end: reading.endPage})} · ${i18n.t("reading_words_count", {count: reading.wordCount ?? 0})}`;
 
+// Заголовок завдання: назва від вчителя, а без неї — назва книги.
+export const readingTitle = (reading: ClassroomReading) => reading.name || reading.bookTitle;
+
 export const formatAttempts = (maxAttempts: number | null) =>
     maxAttempts === null ? i18n.t("reading_attempts_unlimited") : i18n.t("reading_attempts_value", {count: maxAttempts});
 
@@ -46,8 +49,13 @@ const ClassroomReadingCard: FC<Props> = ({reading, onPress, onDelete, disabled =
     >
         <YStack gap={2}>
             <CustomText size="h5Medium" color="$gray-20" numberOfLines={2}>
-                {reading.bookTitle}
+                {readingTitle(reading)}
             </CustomText>
+            {reading.name && (
+                <CustomText size="p2Regular" color="$gray-20" numberOfLines={1}>
+                    {reading.bookTitle}
+                </CustomText>
+            )}
             <CustomText size="p3Regular" color="$gray-40">
                 {formatFragment(reading)}
             </CustomText>

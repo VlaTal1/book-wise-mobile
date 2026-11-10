@@ -6,6 +6,8 @@ export type ReadingMode = "FIXED" | "RANDOM";
 export type ClassroomReading = {
     id: number;
     classroomId: number;
+    // Назва від вчителя; null — не задана (показуємо назву книги).
+    name: string | null;
     mode: ReadingMode;
     bookId: number;
     bookTitle: string;
@@ -26,6 +28,7 @@ export type ClassroomReading = {
 
 export type ClassroomReadingRequest = {
     mode: ReadingMode;
+    name?: string;
     bookId: number;
     startPage?: number;
     endPage?: number;

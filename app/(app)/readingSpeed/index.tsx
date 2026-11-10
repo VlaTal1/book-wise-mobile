@@ -294,7 +294,8 @@ const ReadingSpeed = () => {
             }, assignment?.id);
 
             setReferenceWords(reference.words);
-            setReferenceTitle(reference.title);
+            // У завданні класу — назва від вчителя (якщо задана), інакше назва тексту.
+            setReferenceTitle(assignment?.name || reference.title);
             setPhase("reading");
             // Старий Python-сервіс ліміт не надсилає — тоді стандартна хвилина.
             startReadingTimer(reference.time_limit_seconds !== undefined ? reference.time_limit_seconds : READING_TIME_LIMIT_SECONDS);

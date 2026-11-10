@@ -184,6 +184,9 @@ const ReadingHistoryDetails = () => {
                 {attempt && (
                     <ScrollView contentContainerStyle={{paddingHorizontal: 16, paddingBottom: 32}}>
                         <YStack gap={16}>
+                            <CustomText size="h4Medium" color="$gray-20" paddingHorizontal={4}>
+                                {attempt.classroomReadingTitle ?? i18n.t("reading_free_practice")}
+                            </CustomText>
                             <YStack
                                 backgroundColor="#FFFFFF"
                                 borderRadius={28}
