@@ -15,6 +15,7 @@ import useApi from "@/hooks/useApi";
 import classroomReadingApi from "@/api/endpoints/classroomReadingApi";
 import {ClassroomReadingResults, StudentReadingResult} from "@/types/ClassroomReading";
 import {formatGrade, gradeColors} from "@/constants/readingGrade";
+import {GradeBreakdown} from "@/components/readingSpeed/GradeBreakdown";
 
 const StudentRow = ({result, position, maxAttempts, onPress}: {
     result: StudentReadingResult;
@@ -28,48 +29,62 @@ const StudentRow = ({result, position, maxAttempts, onPress}: {
         : i18n.t("reading_results_attempts_of", {count: result.attemptsCount, max: maxAttempts});
 
     return (
-        <XStack
+        <YStack
             backgroundColor="#FFFFFF"
             borderRadius={16}
             paddingHorizontal={14}
             paddingVertical={12}
             borderWidth={1}
             borderColor="$gray-85"
-            alignItems="center"
-            gap={12}
+            gap={10}
             pressStyle={onPress ? {opacity: 0.7} : undefined}
             onPress={onPress}
         >
-            <CustomText size="h5Medium" color="$gray-40" width={24} textAlign="center">
-                {position ?? "—"}
-            </CustomText>
-            <YStack flex={1} gap={2}>
-                <CustomText size="p1Medium" color="$gray-20" numberOfLines={1}>
-                    {result.participantName}
+            <XStack alignItems="center" gap={12}>
+                <CustomText size="h5Medium" color="$gray-40" width={24} textAlign="center">
+                    {position ?? "—"}
                 </CustomText>
-                <CustomText size="p3Regular" color="$gray-40">
-                    {result.attemptsCount === 0 ? i18n.t("reading_results_no_attempts") : attempts}
-                    {result.bestWpm !== null ? ` · ${i18n.t("reading_results_wpm", {wpm: Math.round(result.bestWpm)})}` : ""}
-                </CustomText>
-                {result.gradePending && (
-                    <XStack alignItems="center" gap={6}>
-                        <ActivityIndicator size={10} color="#A68A63"/>
-                        <CustomText size="p3Regular" color="#A68A63">
-                            {i18n.t("reading_results_pending")}
+                <YStack flex={1} gap={2}>
+                    <CustomText size="p1Medium" color="$gray-20" numberOfLines={1}>
+                        {result.participantName}
+                    </CustomText>
+                    <CustomText size="p3Regular" color="$gray-40">
+                        {result.attemptsCount === 0 ? i18n.t("reading_results_no_attempts") : attempts}
+                    </CustomText>
+                    {result.gradePending && (
+                        <XStack alignItems="center" gap={6}>
+                            <ActivityIndicator size={10} color="#A68A63"/>
+                            <CustomText size="p3Regular" color="#A68A63">
+                                {i18n.t("reading_results_pending")}
+                            </CustomText>
+                        </XStack>
+                    )}
+                </YStack>
+                {colors && result.bestGrade !== null ? (
+                    <XStack backgroundColor={colors.bg} paddingHorizontal={12} paddingVertical={6} borderRadius={999}>
+                        <CustomText size="h5Medium" color={colors.text}>
+                            {formatGrade(result.bestGrade)}
                         </CustomText>
                     </XStack>
+                ) : (
+                    <CustomText size="h5Medium" color="$gray-60">—</CustomText>
                 )}
-            </YStack>
-            {colors && result.bestGrade !== null ? (
-                <XStack backgroundColor={colors.bg} paddingHorizontal={12} paddingVertical={6} borderRadius={999}>
-                    <CustomText size="h5Medium" color={colors.text}>
-                        {formatGrade(result.bestGrade)}
-                    </CustomText>
-                </XStack>
-            ) : (
-                <CustomText size="h5Medium" color="$gray-60">—</CustomText>
+            </XStack>
+            {/* Складові найкращої (оціненої) спроби — та сама, що в загальній оцінці. */}
+            {result.bestAttemptId !== null && (
+                <GradeBreakdown
+                    data={{
+                        speedScore: result.bestSpeedScore,
+                        pronunciationScore: result.bestPronunciationScore,
+                        comprehensionScore: result.bestComprehensionScore,
+                        wpm: result.bestWpm,
+                        accuracy: result.bestAccuracy,
+                        quizTotal: result.bestQuizTotal,
+                        quizCorrect: result.bestQuizCorrect,
+                    }}
+                />
             )}
-        </XStack>
+        </YStack>
     );
 };
 

@@ -269,6 +269,8 @@ const ua = {
     "reading_grade_pronunciation": "Вимова",
     "reading_grade_comprehension": "Розуміння",
     "reading_grade_no_quiz": "без тесту",
+    "reading_metric_correct_percent": "%{percent}% вірно",
+    "reading_metric_quiz": "%{correct} з %{total} відп.",
     "reading_grade_sum_hint": "Сума трьох показників, кожен до 5 балів",
     "reading_result_wpm_of_norm": "%{wpm} з норми %{norm}",
     "reading_result_errors_skipped": "Помилок / пропущено",

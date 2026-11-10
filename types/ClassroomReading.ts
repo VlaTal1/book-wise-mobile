@@ -45,6 +45,13 @@ export type StudentReadingResult = {
     bestGrade: number | null;
     bestAttemptId: number | null;
     bestWpm: number | null;
+    // Складові оцінки найкращої спроби (по 0-5) і сирі показники.
+    bestSpeedScore?: number | null;
+    bestPronunciationScore?: number | null;
+    bestComprehensionScore?: number | null;
+    bestAccuracy?: number | null;
+    bestQuizTotal?: number | null;
+    bestQuizCorrect?: number | null;
     gradePending: boolean;
 }
 

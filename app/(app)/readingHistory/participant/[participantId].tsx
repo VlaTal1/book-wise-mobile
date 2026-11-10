@@ -13,7 +13,8 @@ import i18n from "@/localization/i18n";
 import useApi from "@/hooks/useApi";
 import readingSpeedAttemptApi from "@/api/endpoints/readingSpeedAttemptApi";
 import {ReadingSpeedAttempt} from "@/types/ReadingSpeed";
-import {formatGrade} from "@/constants/readingGrade";
+import {formatGrade, gradeColors} from "@/constants/readingGrade";
+import {GradeBreakdown} from "@/components/readingSpeed/GradeBreakdown";
 
 const formatDate = (iso: string): string => {
     const date = new Date(iso);
@@ -26,11 +27,12 @@ const ReadingHistoryRow = ({attempt, onPress, onDelete}: {
     onPress: () => void;
     onDelete: () => void;
 }) => {
-    const stressLabel = attempt.stressStatus === "DONE" && attempt.stressAccuracy !== null
-        ? `${Math.round(attempt.stressAccuracy * 100)}%`
-        : attempt.stressStatus === "PROCESSING" || attempt.stressStatus === "PENDING"
-            ? i18n.t("reading_speed_stress_processing")
-            : null;
+    // Як на сторінці спроби: оцінки ще немає, бо рахується наголос або учень
+    // ще не відповів на тест.
+    const gradePending = attempt.grade == null && (
+        attempt.stressStatus === "PENDING" || attempt.stressStatus === "PROCESSING" ||
+        (attempt.quizTotal != null && attempt.quizTotal > 0 && attempt.quizCorrect == null)
+    );
 
     const confirmDelete = () => {
         Alert.alert(
@@ -50,7 +52,7 @@ const ReadingHistoryRow = ({attempt, onPress, onDelete}: {
             padding={16}
             borderWidth={1}
             borderColor="$gray-85"
-            gap={6}
+            gap={10}
             onPress={onPress}
             pressStyle={{opacity: 0.9, scale: 0.99}}
         >
@@ -61,12 +63,12 @@ const ReadingHistoryRow = ({attempt, onPress, onDelete}: {
                 <XStack alignItems="center" gap={10}>
                     {attempt.grade != null && (
                         <XStack
-                            backgroundColor="#FBEAD9"
+                            backgroundColor={gradeColors(attempt.grade).bg}
                             paddingHorizontal={10}
                             paddingVertical={2}
                             borderRadius={999}
                         >
-                            <CustomText size="p2Medium" color="#CB5A2E">
+                            <CustomText size="p2Medium" color={gradeColors(attempt.grade).text}>
                                 {formatGrade(attempt.grade)}
                             </CustomText>
                         </XStack>
@@ -79,19 +81,7 @@ const ReadingHistoryRow = ({attempt, onPress, onDelete}: {
             <CustomText size="p2Regular" color="$gray-20" numberOfLines={1}>
                 {attempt.classroomReadingTitle ?? i18n.t("reading_free_practice")}
             </CustomText>
-            <XStack gap={16}>
-                <CustomText size="p2Regular" color="$gray-40">
-                    {attempt.wpm} {i18n.t("reading_history_wpm_short")}
-                </CustomText>
-                <CustomText size="p2Regular" color="$gray-40">
-                    {Math.round(attempt.accuracy * 100)}%
-                </CustomText>
-                {stressLabel && (
-                    <CustomText size="p2Regular" color="$gray-40">
-                        {i18n.t("reading_speed_stress_accuracy")}: {stressLabel}
-                    </CustomText>
-                )}
-            </XStack>
+            <GradeBreakdown data={attempt} pending={gradePending}/>
         </YStack>
     );
 };
