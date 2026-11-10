@@ -57,7 +57,7 @@ const Chip: FC<{label: string; selected: boolean; onPress: () => void}> = ({labe
 // позначає перший та останній абзац фрагмента; ліміт часу й спроб — чипами.
 const CreateReadingModal: FC<Props> = ({onClose, isOpen, onSave, classroomId, classroomName, books}) => {
 
-    const [mode, setMode] = useState<ReadingMode>("FIXED");
+    const [mode, setMode] = useState<ReadingMode>("RANDOM");
     const [name, setName] = useState("");
     const [selectedBook, setSelectedBook] = useState<Book | undefined>(undefined);
     const [isBookSelectModalOpen, setIsBookSelectModalOpen] = useState(false);
@@ -80,7 +80,7 @@ const CreateReadingModal: FC<Props> = ({onClose, isOpen, onSave, classroomId, cl
 
     const onCancel = useCallback(() => {
         onClose();
-        setMode("FIXED");
+        setMode("RANDOM");
         setName("");
         setSelectedBook(undefined);
         setStartPage("1");
@@ -244,8 +244,8 @@ const CreateReadingModal: FC<Props> = ({onClose, isOpen, onSave, classroomId, cl
                         </LabelledInput>
 
                         <XStack gap={6} flexWrap="wrap">
-                            <Chip label={i18n.t("reading_mode_fixed")} selected={mode === "FIXED"} onPress={() => setMode("FIXED")}/>
                             <Chip label={i18n.t("reading_mode_random")} selected={mode === "RANDOM"} onPress={() => setMode("RANDOM")}/>
+                            <Chip label={i18n.t("reading_mode_fixed")} selected={mode === "FIXED"} onPress={() => setMode("FIXED")}/>
                         </XStack>
 
                         <LabelledInput label={i18n.t("book")} htmlFor="readingBook">
