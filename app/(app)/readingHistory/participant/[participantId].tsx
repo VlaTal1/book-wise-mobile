@@ -56,10 +56,15 @@ const ReadingHistoryRow = ({attempt, onPress, onDelete}: {
             onPress={onPress}
             pressStyle={{opacity: 0.9, scale: 0.99}}
         >
-            <XStack justifyContent="space-between" alignItems="center">
-                <CustomText size="p2Medium" color="$gray-20">
-                    {formatDate(attempt.createdAt)}
-                </CustomText>
+            <XStack justifyContent="space-between" alignItems="flex-start" gap={10}>
+                <YStack flex={1} gap={2}>
+                    <CustomText size="h5Medium" color="$gray-20" numberOfLines={2}>
+                        {attempt.classroomReadingTitle ?? i18n.t("reading_free_practice")}
+                    </CustomText>
+                    <CustomText size="p3Regular" color="$gray-40">
+                        {formatDate(attempt.createdAt)}
+                    </CustomText>
+                </YStack>
                 <XStack alignItems="center" gap={10}>
                     {attempt.grade != null && (
                         <XStack
@@ -78,9 +83,6 @@ const ReadingHistoryRow = ({attempt, onPress, onDelete}: {
                     </XStack>
                 </XStack>
             </XStack>
-            <CustomText size="p2Regular" color="$gray-20" numberOfLines={1}>
-                {attempt.classroomReadingTitle ?? i18n.t("reading_free_practice")}
-            </CustomText>
             <GradeBreakdown data={attempt} pending={gradePending}/>
         </YStack>
     );
