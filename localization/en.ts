@@ -271,7 +271,7 @@ const en = {
     "reading_metric_correct_percent": "%{percent}% correct",
     "reading_metric_quiz": "%{correct} of %{total} ans.",
     "reading_grade_no_quiz": "no quiz",
-    "reading_grade_sum_hint": "Sum of three scores, up to 5 points each",
+    "reading_grade_sum_hint": "Sum of three scores, up to 4 points each",
     "reading_result_wpm_of_norm": "%{wpm} of %{norm} norm",
     "reading_result_errors_skipped": "Errors / skipped",
     "reading_result_quiz_answers": "Correct answers",

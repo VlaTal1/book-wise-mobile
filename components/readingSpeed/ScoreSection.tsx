@@ -7,7 +7,7 @@ import {GRADE_COMPONENT_MAX} from "@/constants/readingGrade";
 
 const ACCENT = "#CB5A2E";
 
-// Блок одного показника оцінки: назва й бал «4/5» праворуч, під ними —
+// Блок одного показника оцінки: назва й бал «3/4» праворуч, під ними —
 // сирі показники, з яких цей бал порахований.
 export const ScoreSection: FC<{
     title: string;

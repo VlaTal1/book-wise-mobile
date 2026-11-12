@@ -16,7 +16,7 @@ export type GradeBreakdownData = {
     quizCorrect: number | null | undefined;
 };
 
-// Одна плитка: назва показника зверху, бал «4/5» по центру, під ним — сирий
+// Одна плитка: назва показника зверху, бал «3/4» по центру, під ним — сирий
 // показник, з якого бал порахований (сл/хв, % правильно, відповіді тесту).
 const ScoreTile: FC<{
     label: string;
@@ -24,7 +24,7 @@ const ScoreTile: FC<{
     metric: string;
     pending: boolean;
 }> = ({label, score, metric, pending}) => {
-    // Колір як у підсумкової оцінки, перерахований з 0-5 на 0-15.
+    // Колір як у підсумкової оцінки, перерахований з 0-4 на 0-12.
     const colors = score != null ? gradeColors(score * (GRADE_MAX / GRADE_COMPONENT_MAX)) : null;
     return (
         <YStack
